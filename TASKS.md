@@ -49,9 +49,9 @@
   Phase 5 se concentrera sur l'écran dédié tours/mesures et les alertes d'inactivité T5.2)
 
 ## Phase 4 — Suivi des séances (Epic 4)
-- [ ] T4.1 API : log de séance pré-rempli depuis le jour de programme prévu — US-4.1
-- [ ] T4.2 Frontend : formulaire de séance (charge/reps réalisées, ressenti, notes)
-- [ ] T4.3 Frontend : graphique de progression de charge par exercice — US-4.2
+- [x] T4.1 API : log de séance pré-rempli depuis le jour de programme prévu — US-4.1
+- [x] T4.2 Frontend : formulaire de séance (charge/reps réalisées, ressenti, notes)
+- [x] T4.3 Frontend : graphique de progression de charge par exercice — US-4.2
 
 ## Phase 5 — Mesures corporelles
 - [ ] T5.1 API + frontend : CRUD mesures (poids, tours), graphique d'évolution
@@ -80,7 +80,7 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 3 — terminée. Prête à démarrer la Phase 4 (Epic 4 : suivi des séances).
+**Dernière phase active :** Phase 4 — terminée. Prête à démarrer la Phase 5 (mesures corporelles).
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -157,4 +157,25 @@ _Mettre à jour cette ligne à chaque session de travail :_
 - Testé de bout en bout (calcul auto vérifié identique aux tests unitaires, mode manuel, moyennes
   glissantes, ajout de journal et de mesure de poids via navigateur piloté) contre la vraie base
   Neon ; données de test nettoyées après vérification.
-- Branche : `feature/phase-3`, partie de `main` (post-merge PR #3).
+- Branche : `feature/phase-3`, mergée sur `main` via PR #4.
+
+**Notes Phase 4 :**
+- API séances imbriquée sous `/api/clients/:id/seances` (liste filtrable par `debut`/`fin`/`jourId`,
+  création) et `/api/seances/:id` (détail/édition/suppression) — ownership directe via `client.coachId`
+  (`getOwnedSeance` dans `backend/src/lib/ownership.js`).
+- Pré-remplissage depuis un jour de programme (US-4.1) : `GET /api/clients/:id/jours-entrainement`
+  liste tous les jours de tous les programmes du client (aplati, avec nom du programme parent) ;
+  le frontend copie `chargeCible`/`reps` de chaque exercice comme valeurs de départ, modifiables
+  avant enregistrement. Une séance peut aussi être "libre" (`jourId: null`, exercices saisis à la main).
+- Progression par exercice (US-4.2) : `GET /api/clients/:id/exercices-noms` (liste distincte des noms
+  déjà logués, pour peupler le sélecteur) et `GET /api/clients/:id/progression?exercice=Nom`
+  (points `{date, chargeRealisee, repsRealisees}` triés chronologiquement) — le rapprochement entre
+  séances se fait par égalité stricte du nom d'exercice (texte libre, pas de FK vers
+  `ExerciceProgramme`), donc un nom ressaisi différemment ne sera pas regroupé dans le même graphique.
+- Frontend : `SeancesListPage` (historique, filtrable), `SeanceFormPage` (sélection du jour ou séance
+  libre, édition charge/reps/ressenti/notes par exercice), `ProgressionPage` (graphique Recharts par
+  exercice sélectionné).
+- Testé de bout en bout via navigateur piloté et API contre la vraie base Neon (création depuis un
+  jour de programme, séance libre, édition, suppression, graphique de progression sur 2 séances) ;
+  données de test nettoyées après vérification.
+- Branche : `feature/phase-4`, partie de `main` (post-merge PR #4).

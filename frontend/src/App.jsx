@@ -10,6 +10,9 @@ import { ProgrammesListPage } from './pages/ProgrammesListPage';
 import { ProgrammeFormPage } from './pages/ProgrammeFormPage';
 import { ProgrammeCalendarPage } from './pages/ProgrammeCalendarPage';
 import { NutritionPage } from './pages/NutritionPage';
+import { SeancesListPage } from './pages/SeancesListPage';
+import { SeanceFormPage } from './pages/SeanceFormPage';
+import { ProgressionPage } from './pages/ProgressionPage';
 
 function App() {
   return (
@@ -33,6 +36,10 @@ function App() {
                 element={<ProgrammeCalendarPage />}
               />
               <Route path="/clients/:clientId/nutrition" element={<NutritionPage />} />
+              <Route path="/clients/:clientId/seances" element={<SeancesListPage />} />
+              <Route path="/clients/:clientId/seances/new" element={<SeanceFormPage />} />
+              <Route path="/clients/:clientId/seances/:seanceId" element={<SeanceFormPage />} />
+              <Route path="/clients/:clientId/progression" element={<ProgressionPage />} />
             </Route>
           </Route>
         </Routes>
