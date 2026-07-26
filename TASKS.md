@@ -80,8 +80,10 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 5 — terminée. V1 fonctionnellement complète (Epics 1 à 5). Prête à
-démarrer la Phase 6 (tableau de bord & communication).
+**Dernière phase active :** Phase 5 — terminée (Epics 1 à 5 : clients, programmes, nutrition, séances,
+mesures). La V1 n'est **pas** terminée — il reste la Phase 6 (tableau de bord & communication) et la
+Phase 7 (PWA, export, déploiement réel sur Netlify/Render/Neon) avant de la considérer complète, voir
+section 7 du cahier des charges. Prête à démarrer la Phase 6.
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
