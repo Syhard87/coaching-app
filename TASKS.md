@@ -79,7 +79,8 @@ _Mettre à jour cette ligne à chaque session de travail :_
 - Frontend : Vite + React + Tailwind CSS v4 (plugin `@tailwindcss/vite`) dans `frontend/`.
 - Prisma : v6.19.3 (générateur classique `prisma-client-js`), schéma complet dans
   `backend/prisma/schema.prisma` couvrant toutes les entités de la section 4 du cahier des charges.
-  Migration initiale (`prisma/migrations/20260726153909_init`) générée et testée contre un Postgres
-  local (Docker) — **la vraie base Neon n'a pas encore été créée**, `backend/.env` contient un
-  `DATABASE_URL` placeholder à remplacer avant `prisma migrate deploy` en production (voir T7.5).
+  Migration initiale (`prisma/migrations/20260726153909_init`) générée contre un Postgres local
+  (Docker), puis appliquée avec succès sur la vraie base **Neon** via `prisma migrate deploy` —
+  connexion vérifiée (14 tables + `_prisma_migrations` présentes). `backend/.env` contient
+  désormais le vrai `DATABASE_URL` Neon (non commité, cf. `.gitignore`).
 - Branche de travail : `feature/phase-0`.
