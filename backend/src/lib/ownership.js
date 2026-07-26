@@ -41,3 +41,9 @@ export async function getOwnedMesure(coachId, mesureId) {
   if (!mesure || mesure.client.coachId !== coachId) return null;
   return mesure;
 }
+
+export async function getOwnedSeance(coachId, seanceId) {
+  const seance = await prisma.seance.findUnique({ where: { id: seanceId }, include: { client: true } });
+  if (!seance || seance.client.coachId !== coachId) return null;
+  return seance;
+}

@@ -435,4 +435,121 @@ router.post(
   })
 );
 
+router.get(
+  '/:id/jours-entrainement',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const jours = await prisma.jourEntrainement.findMany({
+      where: { programme: { clientId: client.id } },
+      include: { programme: { select: { id: true, nom: true } }, exercices: true },
+      orderBy: [{ programmeId: 'asc' }, { ordre: 'asc' }],
+    });
+    res.json(jours);
+  })
+);
+
+router.get(
+  '/:id/seances',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { debut, fin, jourId } = req.query;
+    const seances = await prisma.seance.findMany({
+      where: {
+        clientId: client.id,
+        ...(jourId ? { jourId } : {}),
+        ...(debut || fin
+          ? { date: { ...(debut ? { gte: new Date(debut) } : {}), ...(fin ? { lte: new Date(fin) } : {}) } }
+          : {}),
+      },
+      include: { jour: { include: { programme: { select: { nom: true } } } }, exercicesRealises: true },
+      orderBy: { date: 'desc' },
+    });
+    res.json(seances);
+  })
+);
+
+router.post(
+  '/:id/seances',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { date, jourId, ressenti, notes, exercicesRealises } = req.body;
+    if (!date) return res.status(400).json({ error: 'date est requise' });
+
+    if (jourId) {
+      const jour = await prisma.jourEntrainement.findFirst({
+        where: { id: jourId, programme: { clientId: client.id } },
+      });
+      if (!jour) return res.status(400).json({ error: 'jourId invalide pour ce client' });
+    }
+
+    const seance = await prisma.seance.create({
+      data: {
+        clientId: client.id,
+        date: new Date(date),
+        jourId: jourId || null,
+        ressenti,
+        notes,
+        exercicesRealises: {
+          create: (exercicesRealises || []).map((e) => ({
+            nom: e.nom,
+            chargeRealisee: e.chargeRealisee,
+            repsRealisees: e.repsRealisees,
+            notes: e.notes,
+          })),
+        },
+      },
+      include: { jour: true, exercicesRealises: true },
+    });
+    res.status(201).json(seance);
+  })
+);
+
+router.get(
+  '/:id/exercices-noms',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const rows = await prisma.exerciceRealise.findMany({
+      where: { seance: { clientId: client.id } },
+      select: { nom: true },
+      distinct: ['nom'],
+      orderBy: { nom: 'asc' },
+    });
+    res.json(rows.map((r) => r.nom));
+  })
+);
+
+router.get(
+  '/:id/progression',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { exercice } = req.query;
+    if (!exercice) return res.status(400).json({ error: 'exercice est requis' });
+
+    const realises = await prisma.exerciceRealise.findMany({
+      where: { nom: exercice, seance: { clientId: client.id } },
+      include: { seance: { select: { date: true } } },
+    });
+
+    const points = realises
+      .map((e) => ({
+        date: e.seance.date,
+        chargeRealisee: e.chargeRealisee,
+        repsRealisees: e.repsRealisees,
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    res.json(points);
+  })
+);
+
 export default router;

@@ -64,6 +64,17 @@ export const clientsApi = {
   upsertJournalDiete: (id, data) => request('PUT', `/clients/${id}/journal-diete`, data),
   listMesures: (id) => request('GET', `/clients/${id}/mesures`),
   createMesure: (id, data) => request('POST', `/clients/${id}/mesures`, data),
+  listJoursEntrainement: (id) => request('GET', `/clients/${id}/jours-entrainement`),
+  listSeances: (id, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
+    ).toString();
+    return request('GET', `/clients/${id}/seances${qs ? `?${qs}` : ''}`);
+  },
+  createSeance: (id, data) => request('POST', `/clients/${id}/seances`, data),
+  listExercicesNoms: (id) => request('GET', `/clients/${id}/exercices-noms`),
+  getProgression: (id, exercice) =>
+    request('GET', `/clients/${id}/progression?exercice=${encodeURIComponent(exercice)}`),
 };
 
 export const programmesApi = {
@@ -99,4 +110,10 @@ export const journalDieteApi = {
 export const mesuresApi = {
   update: (id, data) => request('PATCH', `/mesures/${id}`, data),
   remove: (id) => request('DELETE', `/mesures/${id}`),
+};
+
+export const seancesApi = {
+  get: (id) => request('GET', `/seances/${id}`),
+  update: (id, data) => request('PATCH', `/seances/${id}`, data),
+  remove: (id) => request('DELETE', `/seances/${id}`),
 };
