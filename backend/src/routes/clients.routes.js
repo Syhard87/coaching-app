@@ -8,6 +8,8 @@ import {
   JourSemaine,
   Creneau,
   TypeSplit,
+  MethodeCalcul,
+  TypeObjectifCalorique,
 } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -15,6 +17,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { validateEnum } from '../lib/validation.js';
 import { suggererSplit, compterJoursDisponibles } from '../lib/splitSuggestion.js';
 import { createProgrammeForClient, validateJours } from '../lib/programmes.js';
+import { calculerObjectifsAuto } from '../lib/nutrition.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -280,6 +283,155 @@ router.post(
 
     const programme = await createProgrammeForClient(prisma, client.id, { nom, typeSplit, frequence, jours });
     res.status(201).json(programme);
+  })
+);
+
+router.get(
+  '/:id/objectif-diete',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const objectif = await prisma.objectifDiete.findUnique({ where: { clientId: client.id } });
+    res.json(objectif);
+  })
+);
+
+router.put(
+  '/:id/objectif-diete',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { methodeCalcul } = req.body;
+    validateEnum(methodeCalcul, MethodeCalcul, 'methodeCalcul');
+    if (!methodeCalcul) return res.status(400).json({ error: 'methodeCalcul est requis' });
+
+    let data;
+    if (methodeCalcul === 'AUTO') {
+      const { typeObjectifCalorique } = req.body;
+      validateEnum(typeObjectifCalorique, TypeObjectifCalorique, 'typeObjectifCalorique');
+      if (!typeObjectifCalorique) {
+        return res.status(400).json({ error: 'typeObjectifCalorique est requis en mode automatique' });
+      }
+      const { sexe, poidsInitial, tailleCm, age } = client;
+      if (!sexe || !poidsInitial || !tailleCm || !age || !client.niveauActivite) {
+        return res.status(400).json({
+          error:
+            'Le profil client doit renseigner sexe, âge, taille, poids et niveau d\'activité pour le calcul automatique',
+        });
+      }
+
+      const calc = calculerObjectifsAuto({
+        sexe,
+        poidsKg: poidsInitial,
+        tailleCm,
+        age,
+        niveauActivite: client.niveauActivite,
+        typeObjectifCalorique,
+      });
+
+      data = { methodeCalcul, typeObjectifCalorique, ...calc };
+    } else {
+      const { caloriesCible, proteinesCible, glucidesCible, lipidesCible } = req.body;
+      if (!caloriesCible || !proteinesCible || !glucidesCible || !lipidesCible) {
+        return res.status(400).json({
+          error: 'caloriesCible, proteinesCible, glucidesCible et lipidesCible sont requis en mode manuel',
+        });
+      }
+      data = {
+        methodeCalcul,
+        typeObjectifCalorique: null,
+        tdeeCalcule: null,
+        caloriesCible,
+        proteinesCible,
+        glucidesCible,
+        lipidesCible,
+      };
+    }
+
+    const objectif = await prisma.objectifDiete.upsert({
+      where: { clientId: client.id },
+      create: { clientId: client.id, ...data },
+      update: data,
+    });
+    res.json(objectif);
+  })
+);
+
+router.get(
+  '/:id/journal-diete',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { debut, fin } = req.query;
+    const entries = await prisma.journalDiete.findMany({
+      where: {
+        clientId: client.id,
+        ...(debut || fin
+          ? { date: { ...(debut ? { gte: new Date(debut) } : {}), ...(fin ? { lte: new Date(fin) } : {}) } }
+          : {}),
+      },
+      orderBy: { date: 'desc' },
+    });
+    res.json(entries);
+  })
+);
+
+router.put(
+  '/:id/journal-diete',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { date, calories, proteines, glucides, lipides, eau, repas, notes } = req.body;
+    if (!date) return res.status(400).json({ error: 'date est requise' });
+
+    const data = { calories, proteines, glucides, lipides, eau, repas, notes };
+    const entry = await prisma.journalDiete.upsert({
+      where: { clientId_date: { clientId: client.id, date: new Date(date) } },
+      create: { clientId: client.id, date: new Date(date), ...data },
+      update: data,
+    });
+    res.json(entry);
+  })
+);
+
+router.get(
+  '/:id/mesures',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const mesures = await prisma.mesure.findMany({
+      where: { clientId: client.id },
+      orderBy: { date: 'desc' },
+    });
+    res.json(mesures);
+  })
+);
+
+router.post(
+  '/:id/mesures',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { date, poids, bras, taille, poitrine, cuisse, notes } = req.body;
+    const mesure = await prisma.mesure.create({
+      data: {
+        clientId: client.id,
+        ...(date ? { date: new Date(date) } : {}),
+        poids,
+        bras,
+        taille,
+        poitrine,
+        cuisse,
+        notes,
+      },
+    });
+    res.status(201).json(mesure);
   })
 );
 

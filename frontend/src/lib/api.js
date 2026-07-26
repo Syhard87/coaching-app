@@ -53,6 +53,17 @@ export const clientsApi = {
   splitSuggestion: (id) => request('GET', `/clients/${id}/split-suggestion`),
   listProgrammes: (id) => request('GET', `/clients/${id}/programmes`),
   createProgramme: (id, data) => request('POST', `/clients/${id}/programmes`, data),
+  getObjectifDiete: (id) => request('GET', `/clients/${id}/objectif-diete`),
+  setObjectifDiete: (id, data) => request('PUT', `/clients/${id}/objectif-diete`, data),
+  listJournalDiete: (id, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
+    ).toString();
+    return request('GET', `/clients/${id}/journal-diete${qs ? `?${qs}` : ''}`);
+  },
+  upsertJournalDiete: (id, data) => request('PUT', `/clients/${id}/journal-diete`, data),
+  listMesures: (id) => request('GET', `/clients/${id}/mesures`),
+  createMesure: (id, data) => request('POST', `/clients/${id}/mesures`, data),
 };
 
 export const programmesApi = {
@@ -78,4 +89,14 @@ export const templatesApi = {
   get: (id) => request('GET', `/templates/${id}`),
   create: (data) => request('POST', '/templates', data),
   remove: (id) => request('DELETE', `/templates/${id}`),
+};
+
+export const journalDieteApi = {
+  update: (id, data) => request('PATCH', `/journal-diete/${id}`, data),
+  remove: (id) => request('DELETE', `/journal-diete/${id}`),
+};
+
+export const mesuresApi = {
+  update: (id, data) => request('PATCH', `/mesures/${id}`, data),
+  remove: (id) => request('DELETE', `/mesures/${id}`),
 };

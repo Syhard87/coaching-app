@@ -40,11 +40,13 @@
 - [x] T2.8 Duplication de programme vers un autre client (reporté de la Phase 1, US-1.3)
 
 ## Phase 3 — Nutrition (Epic 3)
-- [ ] T3.1 Algorithme BMR/TDEE + objectif calorique/macros (fonction pure + tests unitaires) — US-3.1
-- [ ] T3.2 API objectifs_diete (auto/manuel) + journal_diete (CRUD)
-- [ ] T3.3 Frontend : affichage/édition des objectifs nutritionnels calculés
-- [ ] T3.4 Frontend : journal alimentaire quotidien + moyennes glissantes 7/30 jours
-- [ ] T3.5 Frontend : graphique combiné poids + calories — US-3.2
+- [x] T3.1 Algorithme BMR/TDEE + objectif calorique/macros (fonction pure + tests unitaires) — US-3.1
+- [x] T3.2 API objectifs_diete (auto/manuel) + journal_diete (CRUD)
+- [x] T3.3 Frontend : affichage/édition des objectifs nutritionnels calculés
+- [x] T3.4 Frontend : journal alimentaire quotidien + moyennes glissantes 7/30 jours
+- [x] T3.5 Frontend : graphique combiné poids + calories — US-3.2
+  (a nécessité une API `mesures` minimale en avance sur T5.1, décision validée avec l'utilisateur —
+  Phase 5 se concentrera sur l'écran dédié tours/mesures et les alertes d'inactivité T5.2)
 
 ## Phase 4 — Suivi des séances (Epic 4)
 - [ ] T4.1 API : log de séance pré-rempli depuis le jour de programme prévu — US-4.1
@@ -53,6 +55,8 @@
 
 ## Phase 5 — Mesures corporelles
 - [ ] T5.1 API + frontend : CRUD mesures (poids, tours), graphique d'évolution
+  (API déjà posée en Phase 3 — `GET/POST /clients/:id/mesures`, `PATCH/DELETE /mesures/:id` —
+  reste à faire : écran dédié avec tours de bras/taille/poitrine/cuisse, graphique d'évolution complet)
 - [ ] T5.2 Alerte si absence de mesure récente (seuil configurable, 30 jours par défaut)
 
 ## Phase 6 — Tableau de bord & communication (Epic 5, 6)
@@ -76,7 +80,7 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 2 — terminée. Prête à démarrer la Phase 3 (Epic 3 : nutrition).
+**Dernière phase active :** Phase 3 — terminée. Prête à démarrer la Phase 4 (Epic 4 : suivi des séances).
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -129,4 +133,28 @@ _Mettre à jour cette ligne à chaque session de travail :_
 - Testé de bout en bout (suggestion de split, création depuis archétype, cycles/semaines, changement
   de statut, duplication vers un autre client, sauvegarde en modèle) via navigateur piloté et API
   contre la vraie base Neon ; données de test nettoyées après vérification.
-- Branche : `feature/phase-2`, partie de `main` (post-merge PR #2).
+- Branche : `feature/phase-2`, mergée sur `main` via PR #3.
+
+**Notes Phase 3 :**
+- Algorithme nutritionnel (Mifflin-St Jeor) : fonctions pures dans `backend/src/lib/nutrition.js`
+  (`calculerBMR`, `calculerTDEE`, `calculerCaloriesCible`, `calculerMacros`,
+  `calculerObjectifsAuto`), 9 tests unitaires avec valeurs de référence calculées à la main.
+  Protéines à 2,2 g/kg (haut de fourchette), lipides à 1 g/kg, glucides sur le reste des calories.
+- API `objectifs_diete` (`GET/PUT /api/clients/:id/objectif-diete`) : mode `AUTO` (calcule depuis le
+  profil client + objectif calorique choisi, rejette si profil incomplet) ou `MANUEL` (valeurs
+  saisies directement), upsert sur la relation 1-1 `ObjectifDiete`.
+- API `journal_diete` : upsert par date (`PUT /api/clients/:id/journal-diete`, contrainte unique
+  `[clientId, date]` en base) + édition/suppression fine par entrée
+  (`PATCH/DELETE /api/journal-diete/:id`).
+- **Dépendance anticipée sur la Phase 5** (validée avec l'utilisateur) : T3.5 nécessitait un
+  historique de poids, donc une API `mesures` complète a été construite dès cette phase
+  (`GET/POST /api/clients/:id/mesures`, `PATCH/DELETE /api/mesures/:id`) plutôt que d'attendre
+  T5.1. La Phase 5 n'aura plus qu'à construire l'écran dédié (tours de bras/taille/poitrine/cuisse)
+  et les alertes d'inactivité (T5.2).
+- Frontend : page unique `NutritionPage` (objectifs, journal, graphique) — moyennes glissantes
+  7/30 jours et écart vs objectif calculés côté client à partir de la liste du journal ; graphique
+  combiné poids/calories avec Recharts (`ComposedChart`, deux axes Y).
+- Testé de bout en bout (calcul auto vérifié identique aux tests unitaires, mode manuel, moyennes
+  glissantes, ajout de journal et de mesure de poids via navigateur piloté) contre la vraie base
+  Neon ; données de test nettoyées après vérification.
+- Branche : `feature/phase-3`, partie de `main` (post-merge PR #3).

@@ -29,3 +29,15 @@ export async function getOwnedSemaine(coachId, semaineId) {
   if (!semaine || semaine.cycle.programme.client.coachId !== coachId) return null;
   return semaine;
 }
+
+export async function getOwnedJournalEntry(coachId, entryId) {
+  const entry = await prisma.journalDiete.findUnique({ where: { id: entryId }, include: { client: true } });
+  if (!entry || entry.client.coachId !== coachId) return null;
+  return entry;
+}
+
+export async function getOwnedMesure(coachId, mesureId) {
+  const mesure = await prisma.mesure.findUnique({ where: { id: mesureId }, include: { client: true } });
+  if (!mesure || mesure.client.coachId !== coachId) return null;
+  return mesure;
+}

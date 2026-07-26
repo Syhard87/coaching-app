@@ -61,6 +61,14 @@ export const STATUTS_SEMAINE = [
   { value: 'TEST', label: 'Test' },
 ];
 
+export const TYPES_OBJECTIF_CALORIQUE = [
+  { value: 'DEFICIT_LEGER', label: 'Perte de poids — déficit léger (−250 kcal/j)' },
+  { value: 'DEFICIT_MODERE', label: 'Perte de poids — déficit modéré (−500 kcal/j)' },
+  { value: 'SURPLUS_LEGER', label: 'Prise de masse — surplus léger (+250 kcal/j)' },
+  { value: 'SURPLUS_MODERE', label: 'Prise de masse — surplus modéré (+500 kcal/j)' },
+  { value: 'MAINTIEN', label: 'Maintien / remise en forme' },
+];
+
 function label(options, value) {
   return options.find((o) => o.value === value)?.label || value;
 }
