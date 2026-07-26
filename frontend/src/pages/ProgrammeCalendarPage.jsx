@@ -9,6 +9,20 @@ const STATUT_COLORS = {
   TEST: 'bg-blue-100 text-blue-800 border-blue-300',
 };
 
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Reflet côté client de backend/src/lib/dashboard.js::semaineActuelleIndex — purement indicatif
+// pour l'affichage (le tableau de bord côté serveur reste la source de vérité).
+function semaineActuelleIndex(dateDebut, dureeSemaines) {
+  if (!dateDebut) return null;
+  const joursEcoules = Math.floor((Date.now() - new Date(dateDebut).getTime()) / 86_400_000);
+  if (joursEcoules < 0) return null;
+  const numero = Math.floor(joursEcoules / 7) + 1;
+  return numero > dureeSemaines ? null : numero;
+}
+
 export function ProgrammeCalendarPage() {
   const { clientId, programmeId } = useParams();
   const [programme, setProgramme] = useState(null);
@@ -16,6 +30,7 @@ export function ProgrammeCalendarPage() {
   const [error, setError] = useState(null);
   const [newCycleNom, setNewCycleNom] = useState('');
   const [newCycleDuree, setNewCycleDuree] = useState(4);
+  const [newCycleDateDebut, setNewCycleDateDebut] = useState(todayISO());
   const [creatingCycle, setCreatingCycle] = useState(false);
 
   const load = useCallback(() => {
@@ -37,6 +52,7 @@ export function ProgrammeCalendarPage() {
       await programmesApi.createCycle(programmeId, {
         nom: newCycleNom.trim(),
         dureeSemaines: Number(newCycleDuree),
+        dateDebut: newCycleDateDebut || null,
       });
       setNewCycleNom('');
       load();
@@ -50,6 +66,11 @@ export function ProgrammeCalendarPage() {
   async function handleDeleteCycle(cycleId) {
     if (!window.confirm('Supprimer ce cycle et toutes ses semaines ?')) return;
     await cyclesApi.remove(cycleId);
+    load();
+  }
+
+  async function handleDateDebutChange(cycleId, dateDebut) {
+    await cyclesApi.update(cycleId, { dateDebut: dateDebut || null });
     load();
   }
 
@@ -76,50 +97,71 @@ export function ProgrammeCalendarPage() {
       </h1>
 
       <div className="space-y-6">
-        {programme.cycles.map((cycle) => (
-          <div key={cycle.id} className="rounded border border-gray-200 bg-white p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-medium text-gray-900">
-                {cycle.nom} <span className="text-sm text-gray-500">({cycle.dureeSemaines} semaines)</span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => handleDeleteCycle(cycle.id)}
-                className="text-sm text-red-600 hover:underline"
-              >
-                Supprimer le cycle
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {cycle.semaines.map((semaine) => (
-                <div
-                  key={semaine.id}
-                  className={`w-36 rounded border p-2 text-xs ${STATUT_COLORS[semaine.statut]}`}
-                >
-                  <p className="mb-1 font-medium">Semaine {semaine.numeroSemaine}</p>
-                  <select
-                    value={semaine.statut}
-                    onChange={(e) => handleStatutChange(semaine.id, e.target.value)}
-                    className="w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-700"
+        {programme.cycles.map((cycle) => {
+          const numeroActuel = semaineActuelleIndex(cycle.dateDebut, cycle.dureeSemaines);
+          return (
+            <div key={cycle.id} className="rounded border border-gray-200 bg-white p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-medium text-gray-900">
+                  {cycle.nom} <span className="text-sm text-gray-500">({cycle.dureeSemaines} semaines)</span>
+                </h2>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-gray-600">
+                    Début :{' '}
+                    <input
+                      type="date"
+                      defaultValue={cycle.dateDebut ? cycle.dateDebut.slice(0, 10) : ''}
+                      onBlur={(e) => handleDateDebutChange(cycle.id, e.target.value)}
+                      className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCycle(cycle.id)}
+                    className="text-sm text-red-600 hover:underline"
                   >
-                    {STATUTS_SEMAINE.map((s) => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    defaultValue={semaine.notes || ''}
-                    onBlur={(e) => handleNotesChange(semaine.id, e.target.value)}
-                    placeholder="Notes"
-                    className="mt-1 w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-700"
-                  />
+                    Supprimer le cycle
+                  </button>
                 </div>
-              ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {cycle.semaines.map((semaine) => (
+                  <div
+                    key={semaine.id}
+                    className={`w-36 rounded border p-2 text-xs ${STATUT_COLORS[semaine.statut]} ${
+                      semaine.numeroSemaine === numeroActuel ? 'ring-2 ring-gray-900' : ''
+                    }`}
+                  >
+                    <p className="mb-1 font-medium">
+                      Semaine {semaine.numeroSemaine}
+                      {semaine.numeroSemaine === numeroActuel && (
+                        <span className="ml-1 text-[10px] font-normal text-gray-500">(actuelle)</span>
+                      )}
+                    </p>
+                    <select
+                      value={semaine.statut}
+                      onChange={(e) => handleStatutChange(semaine.id, e.target.value)}
+                      className="w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-700"
+                    >
+                      {STATUTS_SEMAINE.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      defaultValue={semaine.notes || ''}
+                      onBlur={(e) => handleNotesChange(semaine.id, e.target.value)}
+                      placeholder="Notes"
+                      className="mt-1 w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-700"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <form onSubmit={handleCreateCycle} className="mt-6 flex flex-wrap items-end gap-3 rounded border border-dashed border-gray-300 p-4">
@@ -140,6 +182,15 @@ export function ProgrammeCalendarPage() {
             value={newCycleDuree}
             onChange={(e) => setNewCycleDuree(e.target.value)}
             className="mt-1 w-24 rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-700">Date de début</label>
+          <input
+            type="date"
+            value={newCycleDateDebut}
+            onChange={(e) => setNewCycleDateDebut(e.target.value)}
+            className="mt-1 rounded border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
         <button

@@ -16,6 +16,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validateEnum } from '../lib/validation.js';
 import { suggererSplit, compterJoursDisponibles } from '../lib/splitSuggestion.js';
+import { calculerInactivite } from '../lib/dashboard.js';
 import { createProgrammeForClient, validateJours } from '../lib/programmes.js';
 import { calculerObjectifsAuto } from '../lib/nutrition.js';
 
@@ -78,16 +79,7 @@ function validateDisponibilites(disponibilites) {
 // pour un signal fidèle à "un client n'a pas de mesure récente".
 function withInactivite({ mesures, ...client }, seuilJours) {
   const derniereMesureDate = mesures?.[0]?.date ?? null;
-  if (!derniereMesureDate) {
-    return { ...client, derniereMesureDate: null, joursDepuisDerniereMesure: null, inactif: true };
-  }
-  const joursDepuisDerniereMesure = Math.floor((Date.now() - new Date(derniereMesureDate).getTime()) / 86_400_000);
-  return {
-    ...client,
-    derniereMesureDate,
-    joursDepuisDerniereMesure,
-    inactif: joursDepuisDerniereMesure > seuilJours,
-  };
+  return { ...client, derniereMesureDate, ...calculerInactivite(derniereMesureDate, seuilJours) };
 }
 
 router.get(

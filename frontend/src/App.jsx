@@ -14,6 +14,7 @@ import { SeancesListPage } from './pages/SeancesListPage';
 import { SeanceFormPage } from './pages/SeanceFormPage';
 import { ProgressionPage } from './pages/ProgressionPage';
 import { MesuresPage } from './pages/MesuresPage';
+import { DashboardPage } from './pages/DashboardPage';
 
 function App() {
   return (
@@ -25,7 +26,8 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to="/clients" replace />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/clients" element={<ClientsListPage />} />
               <Route path="/clients/new" element={<ClientFormPage />} />
               <Route path="/clients/:id" element={<ClientFormPage />} />

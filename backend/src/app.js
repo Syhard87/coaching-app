@@ -9,6 +9,7 @@ import templatesRoutes from './routes/templates.routes.js';
 import journalDieteRoutes from './routes/journalDiete.routes.js';
 import mesuresRoutes from './routes/mesures.routes.js';
 import seancesRoutes from './routes/seances.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/templates', templatesRoutes);
 app.use('/api/journal-diete', journalDieteRoutes);
 app.use('/api/mesures', mesuresRoutes);
 app.use('/api/seances', seancesRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

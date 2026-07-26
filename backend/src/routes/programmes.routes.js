@@ -113,7 +113,7 @@ router.post(
     const programme = await getOwnedProgramme(req.coachId, req.params.id);
     if (!programme) return res.status(404).json({ error: 'Programme introuvable' });
 
-    const { nom, ordre, dureeSemaines } = req.body;
+    const { nom, ordre, dureeSemaines, dateDebut } = req.body;
     if (!nom || !dureeSemaines || dureeSemaines < 1) {
       return res.status(400).json({ error: 'nom et dureeSemaines (>= 1) sont requis' });
     }
@@ -126,6 +126,7 @@ router.post(
         nom,
         ordre: ordre ?? cyclesExistants,
         dureeSemaines,
+        ...(dateDebut !== undefined ? { dateDebut: dateDebut ? new Date(dateDebut) : null } : {}),
         semaines: {
           create: Array.from({ length: dureeSemaines }, (_, i) => ({ numeroSemaine: i + 1 })),
         },

@@ -60,8 +60,9 @@
 - [x] T5.2 Alerte si absence de mesure récente (seuil configurable, 30 jours par défaut)
 
 ## Phase 6 — Tableau de bord & communication (Epic 5, 6)
-- [ ] T6.1 Tableau de bord coach (clients actifs, séances de la semaine, relances, deload/test) — US-6.1
-- [ ] T6.2 Génération de message pré-rempli partageable WhatsApp/SMS — US-5.1
+- [x] T6.1 Tableau de bord coach (clients actifs, séances de la semaine, relances, deload/test) — US-6.1
+  (a nécessité d'ajouter `dateDebut` sur `Cycle`, absent du modèle initial — voir notes ci-dessous)
+- [x] T6.2 Génération de message pré-rempli partageable WhatsApp/SMS — US-5.1
 
 ## Phase 7 — PWA, export, déploiement (Epic 7)
 - [ ] T7.1 Manifest PWA + service worker (cache minimal hors-ligne) — US-7.1
@@ -80,10 +81,9 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 5 — terminée (Epics 1 à 5 : clients, programmes, nutrition, séances,
-mesures). La V1 n'est **pas** terminée — il reste la Phase 6 (tableau de bord & communication) et la
-Phase 7 (PWA, export, déploiement réel sur Netlify/Render/Neon) avant de la considérer complète, voir
-section 7 du cahier des charges. Prête à démarrer la Phase 6.
+**Dernière phase active :** Phase 6 — terminée (Epics 1 à 6). La V1 n'est **toujours pas** terminée —
+il reste la Phase 7 (PWA, export, déploiement réel sur Netlify/Render/Neon) avant de la considérer
+complète, voir section 7 du cahier des charges. Prête à démarrer la Phase 7.
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -203,4 +203,36 @@ section 7 du cahier des charges. Prête à démarrer la Phase 6.
   déclenche une confirmation navigateur (`window.confirm`, cohérent avec le reste de l'app) qui
   bloque l'automatisation CDP — testée avec succès via API à la place ; comportement UI non
   re-testé en direct mais code identique au pattern déjà validé ailleurs dans l'app.
-- Branche : `feature/phase-5`, partie de `main` (post-merge PR #5).
+- Branche : `feature/phase-5`, mergée sur `main` via PR #6.
+
+**Notes Phase 6 :**
+- **Changement de schéma découvert en cours de route** : `Cycle` n'avait aucune date de début
+  (seulement `dureeSemaines` et `numeroSemaine` ordinal sur `SemainePlanifiee`), rendant impossible
+  le widget "clients en semaine de deload/test **cette semaine**" du tableau de bord. Ajout de
+  `Cycle.dateDebut` (`DateTime?`, `@default(now())`), migration `add_cycle_date_debut` appliquée sur
+  Neon — décision validée avec l'utilisateur avant implémentation. La vue calendrier de la Phase 2
+  (`ProgrammeCalendarPage`) expose maintenant ce champ (éditable par cycle) et surligne visuellement
+  la semaine "actuelle".
+- Fonctions pures dans `backend/src/lib/dashboard.js` (+ 10 tests unitaires) :
+  `calculerInactivite` (partagée avec `clients.routes.js`, remplace la logique dupliquée de la
+  Phase 5), `semaineActuelleIndex` (numéro de semaine d'un cycle couvrant "maintenant", ou `null`),
+  `debutSemaineCourante` (lundi 00:00 **UTC** — bug de fuseau horaire détecté et corrigé pendant le
+  développement : un calcul en heure locale du serveur aurait fonctionné par coïncidence en dev
+  (Europe/Paris) mais aurait mal classé les séances autour de minuit sur un serveur Render, dont le
+  fuseau par défaut est UTC).
+- `GET /api/dashboard` agrège clients actifs, séances loguées cette semaine, clients à relancer
+  (réutilise `calculerInactivite`), clients en semaine deload/test cette semaine (parcourt
+  programmes → cycles → semaines de chaque client, via `semaineActuelleIndex`).
+- Message pré-rempli (T6.2, US-5.1) : `frontend/src/lib/message.js` (fonction pure
+  `genererMessageRecap`, pas de nouvel endpoint backend — compose le texte à partir des données déjà
+  chargées côté client : dernière séance, dernière mesure, objectif diète). `MessageModal` avec
+  bouton Copier (`navigator.clipboard`) et liens `wa.me`/`sms:` pré-remplis.
+- Frontend : nouvelle page `DashboardPage` devenue la page d'accueil après connexion (`/` redirige
+  vers `/dashboard`), nav ajoutée dans `Layout`.
+- Testé de bout en bout (navigateur + API) contre la vraie base Neon : 3 clients avec historiques de
+  mesures variés, un cycle positionné pour que "aujourd'hui" tombe en semaine de deload — toutes les
+  métriques du tableau de bord vérifiées exactes, semaine "actuelle" correctement surlignée dans le
+  calendrier, message généré et liens WhatsApp/SMS vérifiés (contenu de l'URL inspecté). Le bouton
+  Copier n'a pas pu être vérifié dans l'environnement d'automatisation (API Clipboard sans
+  permission accordée hors interaction utilisateur réelle) — code standard, non retesté autrement.
+- Branche : `feature/phase-6`, partie de `main` (post-merge PR #6).
