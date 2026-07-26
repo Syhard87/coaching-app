@@ -19,6 +19,9 @@ export function Layout() {
               <Link to="/clients" className="hover:text-gray-900 hover:underline">
                 Clients
               </Link>
+              <Link to="/export" className="hover:text-gray-900 hover:underline">
+                Export
+              </Link>
             </nav>
           </div>
           {coach && (

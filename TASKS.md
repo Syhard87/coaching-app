@@ -65,11 +65,15 @@
 - [x] T6.2 Génération de message pré-rempli partageable WhatsApp/SMS — US-5.1
 
 ## Phase 7 — PWA, export, déploiement (Epic 7)
-- [ ] T7.1 Manifest PWA + service worker (cache minimal hors-ligne) — US-7.1
-- [ ] T7.2 Export des données (CSV/JSON) — US-7.2
-- [ ] T7.3 Déploiement backend sur Render
-- [ ] T7.4 Déploiement frontend sur Netlify
-- [ ] T7.5 Connexion Neon en production + variables d'environnement sécurisées
+- [x] T7.1 Manifest PWA + service worker (cache minimal hors-ligne) — US-7.1
+- [x] T7.2 Export des données (CSV/JSON) — US-7.2
+- [ ] T7.3 Déploiement backend sur Render (en cours)
+  (config prête — `render.yaml` — reste à créer le compte Render et suivre `docs/deploiement.md`,
+  action réservée au coach : nécessite un compte sur un service tiers)
+- [ ] T7.4 Déploiement frontend sur Netlify (en cours)
+  (config prête — `netlify.toml` avec redirect SPA — reste à créer le compte Netlify, idem T7.3)
+- [ ] T7.5 Connexion Neon en production + variables d'environnement sécurisées (en cours)
+  (dépend de T7.3/T7.4 — la base Neon existante peut servir telle quelle, voir le guide)
 
 ## Phase 8 — V2/V3 (hors scope initial, ne pas commencer avant validation V1)
 - [ ] Historique des versions de programme
@@ -81,9 +85,10 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 6 — terminée (Epics 1 à 6). La V1 n'est **toujours pas** terminée —
-il reste la Phase 7 (PWA, export, déploiement réel sur Netlify/Render/Neon) avant de la considérer
-complète, voir section 7 du cahier des charges. Prête à démarrer la Phase 7.
+**Dernière phase active :** Phase 7 — T7.1/T7.2 terminés (PWA + export). T7.3-T7.5 (déploiement réel)
+**non faits** : nécessitent des comptes Render/Netlify que l'agent Claude Code ne peut pas créer —
+config prête (`render.yaml`, `netlify.toml`) et guide pas-à-pas dans `docs/deploiement.md`, à suivre
+par le coach. **La V1 n'est donc pas encore terminée.**
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -235,4 +240,35 @@ complète, voir section 7 du cahier des charges. Prête à démarrer la Phase 7.
   calendrier, message généré et liens WhatsApp/SMS vérifiés (contenu de l'URL inspecté). Le bouton
   Copier n'a pas pu être vérifié dans l'environnement d'automatisation (API Clipboard sans
   permission accordée hors interaction utilisateur réelle) — code standard, non retesté autrement.
-- Branche : `feature/phase-6`, partie de `main` (post-merge PR #6).
+- Branche : `feature/phase-6`, mergée sur `main` via PR #7.
+
+**Notes Phase 7 :**
+- **T7.1** : `vite-plugin-pwa` (plutôt qu'un service worker écrit à la main — outil standard et
+  éprouvé de l'écosystème Vite). Cache uniquement le shell de l'app (JS/CSS/HTML) ;
+  `/api/*` est explicitement en `NetworkOnly` dans la config Workbox — jamais de cache pour les
+  données du coach, seulement pour que l'app se charge hors-ligne. Icône `frontend/public/icon.svg`
+  créée pour l'occasion (l'app n'avait qu'un favicon générique issu du scaffold Vite). Testé : build
+  de prod (`npm run preview`), serveur ensuite **coupé**, rechargement de la page → l'app se charge
+  toujours (shell servi depuis le cache par le service worker, confirmé actif via
+  `navigator.serviceWorker.getRegistrations()`).
+- **T7.2** : `GET /api/export/json` (dump complet imbriqué : coach sans le hash de mot de passe,
+  clients, disponibilités, programmes/cycles/semaines/jours/exercices, séances, nutrition, mesures,
+  templates) et `GET /api/export/csv/:entite` (clients, mesures, journal-diete, séances) via une
+  fonction pure `versCSV` (`backend/src/lib/csv.js`, 6 tests unitaires — échappement virgules/
+  guillemets/retours à la ligne, dates en ISO). Téléchargement authentifié géré côté frontend en
+  `fetch` + `Blob` + lien temporaire (un `<a href>` classique n'enverrait pas le token JWT).
+  Vérifié : requêtes réseau 200, contenu JSON/CSV inspecté via curl (notes avec virgule correctement
+  échappées) ; le téléchargement navigateur suit le flux standard mais le fichier final n'a pas pu
+  être localisé dans l'environnement d'automatisation (limite d'outillage, comme `window.confirm`/
+  clipboard précédemment — le code suit le pattern standard).
+- **T7.3-T7.5 non réalisés** : nécessitent la création de comptes Render/Netlify (OAuth navigateur,
+  éventuellement infos de facturation même pour le palier gratuit) — hors de portée d'un agent
+  autonome. Préparé à la place : `render.yaml` (blueprint backend, `buildCommand` inclut
+  `prisma migrate deploy` pour appliquer les migrations à chaque déploiement automatiquement),
+  `netlify.toml` (build frontend + redirect SPA obligatoire pour React Router — sans lui, tout
+  rechargement sur une route comme `/dashboard` renverrait un 404 Netlify), et `docs/deploiement.md`
+  (guide pas-à-pas complet T7.3→T7.5, y compris le nouveau réglage `FRONTEND_URL` pour restreindre
+  le CORS à l'origine Netlify en production plutôt que d'accepter toutes les origines).
+- Petit durcissement de sécurité en cours de route : CORS restreignable via `FRONTEND_URL`
+  (`backend/src/app.js`), documenté dans `.env.example` — reste permissif par défaut en local.
+- Branche : `feature/phase-7`, partie de `main` (post-merge PR #7).
