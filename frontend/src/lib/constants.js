@@ -47,6 +47,20 @@ export const CRENEAUX = [
   { value: 'SOIR', label: 'Soir' },
 ];
 
+export const TYPES_SPLIT = [
+  { value: 'FULL_BODY', label: 'Full body' },
+  { value: 'HALF_BODY', label: 'Half body (Upper/Lower)' },
+  { value: 'PPL', label: 'Push / Pull / Legs' },
+  { value: 'BRO_SPLIT', label: 'Bro split' },
+  { value: 'PERSONNALISE', label: 'Personnalisé' },
+];
+
+export const STATUTS_SEMAINE = [
+  { value: 'NORMALE', label: 'Normale' },
+  { value: 'DELOAD', label: 'Deload' },
+  { value: 'TEST', label: 'Test' },
+];
+
 function label(options, value) {
   return options.find((o) => o.value === value)?.label || value;
 }
@@ -56,3 +70,5 @@ export const labelSexe = (v) => label(SEXES, v);
 export const labelNiveauActivite = (v) => label(NIVEAUX_ACTIVITE, v);
 export const labelHoraireTravail = (v) => label(HORAIRES_TRAVAIL, v);
 export const labelExperience = (v) => label(EXPERIENCES, v);
+export const labelTypeSplit = (v) => label(TYPES_SPLIT, v);
+export const labelStatutSemaine = (v) => label(STATUTS_SEMAINE, v);
