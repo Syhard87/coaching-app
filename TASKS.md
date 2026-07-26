@@ -54,10 +54,10 @@
 - [x] T4.3 Frontend : graphique de progression de charge par exercice — US-4.2
 
 ## Phase 5 — Mesures corporelles
-- [ ] T5.1 API + frontend : CRUD mesures (poids, tours), graphique d'évolution
-  (API déjà posée en Phase 3 — `GET/POST /clients/:id/mesures`, `PATCH/DELETE /mesures/:id` —
-  reste à faire : écran dédié avec tours de bras/taille/poitrine/cuisse, graphique d'évolution complet)
-- [ ] T5.2 Alerte si absence de mesure récente (seuil configurable, 30 jours par défaut)
+- [x] T5.1 API + frontend : CRUD mesures (poids, tours), graphique d'évolution
+  (API posée en Phase 3, écran dédié `MesuresPage` avec tours bras/taille/poitrine/cuisse et
+  graphiques poids + tours construit en Phase 5)
+- [x] T5.2 Alerte si absence de mesure récente (seuil configurable, 30 jours par défaut)
 
 ## Phase 6 — Tableau de bord & communication (Epic 5, 6)
 - [ ] T6.1 Tableau de bord coach (clients actifs, séances de la semaine, relances, deload/test) — US-6.1
@@ -80,7 +80,10 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 4 — terminée. Prête à démarrer la Phase 5 (mesures corporelles).
+**Dernière phase active :** Phase 5 — terminée (Epics 1 à 5 : clients, programmes, nutrition, séances,
+mesures). La V1 n'est **pas** terminée — il reste la Phase 6 (tableau de bord & communication) et la
+Phase 7 (PWA, export, déploiement réel sur Netlify/Render/Neon) avant de la considérer complète, voir
+section 7 du cahier des charges. Prête à démarrer la Phase 6.
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -98,9 +101,10 @@ _Mettre à jour cette ligne à chaque session de travail :_
   `GET /api/auth/me`. Middleware `requireAuth` dans `backend/src/middleware/auth.js`. `JWT_SECRET`
   ajouté à `.env` / `.env.example`.
 - API clients (`backend/src/routes/clients.routes.js`), scopée par coach : CRUD, recherche (`?search=`),
-  filtre archivés (`?archive=true`), indicateur d'inactivité calculé depuis `updatedAt`
-  (`?seuilJours=`, 30 par défaut), duplication de profil (`POST /clients/:id/duplicate`, vers un
-  nouveau client ou en écrasant un client existant via `targetClientId`).
+  filtre archivés (`?archive=true`), indicateur d'inactivité calculé initialement depuis `updatedAt`
+  (`?seuilJours=`, 30 par défaut — **affiné en Phase 5 / T5.2** pour se baser sur la date de la
+  dernière mesure réelle), duplication de profil (`POST /clients/:id/duplicate`, vers un nouveau
+  client ou en écrasant un client existant via `targetClientId`).
 - Frontend : routing `react-router-dom`, `AuthContext` (JWT en `localStorage`), pages
   login/register/liste clients/formulaire client (une page, nom+objectif seuls obligatoires,
   grille de disponibilités optionnelle), modale de duplication avec confirmation avant écrasement.
@@ -178,4 +182,25 @@ _Mettre à jour cette ligne à chaque session de travail :_
 - Testé de bout en bout via navigateur piloté et API contre la vraie base Neon (création depuis un
   jour de programme, séance libre, édition, suppression, graphique de progression sur 2 séances) ;
   données de test nettoyées après vérification.
-- Branche : `feature/phase-4`, partie de `main` (post-merge PR #4).
+- Branche : `feature/phase-4`, mergée sur `main` via PR #5.
+
+**Notes Phase 5 :**
+- API mesures déjà posée en Phase 3 (`GET/POST /clients/:id/mesures`, `PATCH/DELETE /mesures/:id`),
+  aucun changement backend requis pour le CRUD lui-même.
+- T5.2 (alerte absence de mesure récente) : l'indicateur d'inactivité de la liste clients
+  (`GET /api/clients`) a été **refait** pour se baser sur la date de la dernière mesure loguée
+  (`mesures` triées desc, `take: 1`) plutôt que sur `updatedAt` du client — champ renommé
+  `joursDepuisDerniereMesure` (`null` si le client n'a jamais été mesuré, badge "Jamais mesuré"
+  distinct du cas "pas de mesure depuis X j"). Seuil toujours configurable via `?seuilJours=`
+  (30 jours par défaut).
+- Frontend : `MesuresPage` (route `/clients/:id/mesures`) — formulaire unique servant à la fois de
+  création et d'édition (bascule via un `editingId`), liste chronologique avec suppression, deux
+  graphiques Recharts séparés (poids en kg ; tours bras/taille/poitrine/cuisse en cm sur un même
+  graphique multi-lignes, unités comparables contrairement à poids vs tours).
+- Testé de bout en bout via navigateur piloté et API contre la vraie base Neon : badge "jamais
+  mesuré", badge "pas de mesure depuis Xj" avec seuil de 30j vérifié (86j → inactif, 2j → actif),
+  ajout/édition de mesure avec tours complets, graphiques vérifiés visuellement. La suppression
+  déclenche une confirmation navigateur (`window.confirm`, cohérent avec le reste de l'app) qui
+  bloque l'automatisation CDP — testée avec succès via API à la place ; comportement UI non
+  re-testé en direct mais code identique au pattern déjà validé ailleurs dans l'app.
+- Branche : `feature/phase-5`, partie de `main` (post-merge PR #5).

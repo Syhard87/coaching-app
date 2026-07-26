@@ -73,9 +73,21 @@ function validateDisponibilites(disponibilites) {
   }
 }
 
-function withInactivite(client, seuilJours) {
-  const joursDepuisActivite = Math.floor((Date.now() - new Date(client.updatedAt).getTime()) / 86_400_000);
-  return { ...client, joursDepuisActivite, inactif: joursDepuisActivite > seuilJours };
+// Alerte si absence de mesure récente — cahier des charges section 3.7 / T5.2.
+// Basée sur la date de la dernière mesure loguée (et non plus une simple activité générique),
+// pour un signal fidèle à "un client n'a pas de mesure récente".
+function withInactivite({ mesures, ...client }, seuilJours) {
+  const derniereMesureDate = mesures?.[0]?.date ?? null;
+  if (!derniereMesureDate) {
+    return { ...client, derniereMesureDate: null, joursDepuisDerniereMesure: null, inactif: true };
+  }
+  const joursDepuisDerniereMesure = Math.floor((Date.now() - new Date(derniereMesureDate).getTime()) / 86_400_000);
+  return {
+    ...client,
+    derniereMesureDate,
+    joursDepuisDerniereMesure,
+    inactif: joursDepuisDerniereMesure > seuilJours,
+  };
 }
 
 router.get(
@@ -90,6 +102,7 @@ router.get(
         archive: archive === undefined ? false : archive === 'true',
         ...(search ? { nom: { contains: search, mode: 'insensitive' } } : {}),
       },
+      include: { mesures: { orderBy: { date: 'desc' }, take: 1, select: { date: true } } },
       orderBy: { nom: 'asc' },
     });
 
@@ -102,7 +115,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const client = await prisma.client.findFirst({
       where: { id: req.params.id, coachId: req.coachId },
-      include: { disponibilites: true },
+      include: {
+        disponibilites: true,
+        mesures: { orderBy: { date: 'desc' }, take: 1, select: { date: true } },
+      },
     });
     if (!client) return res.status(404).json({ error: 'Client introuvable' });
     res.json(withInactivite(client, SEUIL_INACTIVITE_JOURS_DEFAUT));

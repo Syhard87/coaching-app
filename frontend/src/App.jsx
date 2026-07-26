@@ -13,6 +13,7 @@ import { NutritionPage } from './pages/NutritionPage';
 import { SeancesListPage } from './pages/SeancesListPage';
 import { SeanceFormPage } from './pages/SeanceFormPage';
 import { ProgressionPage } from './pages/ProgressionPage';
+import { MesuresPage } from './pages/MesuresPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
               <Route path="/clients/:clientId/seances/new" element={<SeanceFormPage />} />
               <Route path="/clients/:clientId/seances/:seanceId" element={<SeanceFormPage />} />
               <Route path="/clients/:clientId/progression" element={<ProgressionPage />} />
+              <Route path="/clients/:clientId/mesures" element={<MesuresPage />} />
             </Route>
           </Route>
         </Routes>

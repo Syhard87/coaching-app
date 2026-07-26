@@ -80,7 +80,9 @@ export function ClientsListPage() {
                   </Link>
                   {client.inactif && (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                      Inactif depuis {client.joursDepuisActivite} j
+                      {client.joursDepuisDerniereMesure == null
+                        ? 'Jamais mesuré'
+                        : `Pas de mesure depuis ${client.joursDepuisDerniereMesure} j`}
                     </span>
                   )}
                   {client.archive && (
@@ -109,6 +111,12 @@ export function ClientsListPage() {
                   className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
                 >
                   Séances
+                </Link>
+                <Link
+                  to={`/clients/${client.id}/mesures`}
+                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
+                >
+                  Mesures
                 </Link>
                 <button
                   type="button"
