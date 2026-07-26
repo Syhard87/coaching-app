@@ -7,10 +7,14 @@ import {
   ExperienceSportive,
   JourSemaine,
   Creneau,
+  TypeSplit,
 } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
+import { validateEnum } from '../lib/validation.js';
+import { suggererSplit, compterJoursDisponibles } from '../lib/splitSuggestion.js';
+import { createProgrammeForClient, validateJours } from '../lib/programmes.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -36,15 +40,6 @@ const PROFIL_FIELDS = [
 const PROFIL_FIELDS_DUPLIQUABLES = PROFIL_FIELDS.filter(
   (f) => !['nom', 'age', 'tailleCm', 'poidsInitial', 'notesSante', 'suiviMedical'].includes(f)
 );
-
-function validateEnum(value, enumObj, fieldName) {
-  if (value === undefined || value === null) return;
-  if (!Object.values(enumObj).includes(value)) {
-    const err = new Error(`Valeur invalide pour ${fieldName} : ${value}`);
-    err.status = 400;
-    throw err;
-  }
-}
 
 function pickProfilFields(body) {
   const data = {};
@@ -233,6 +228,58 @@ router.post(
       include: { disponibilites: true },
     });
     res.status(201).json(client);
+  })
+);
+
+router.get(
+  '/:id/split-suggestion',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({
+      where: { id: req.params.id, coachId: req.coachId },
+      include: { disponibilites: true },
+    });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const joursDisponibles = compterJoursDisponibles(client.disponibilites);
+    const typeSplit = suggererSplit({
+      joursDisponibles,
+      experienceSportive: client.experienceSportive,
+      horaireTravail: client.horaireTravail,
+    });
+
+    res.json({ joursDisponibles, typeSplit });
+  })
+);
+
+router.get(
+  '/:id/programmes',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const programmes = await prisma.programme.findMany({
+      where: { clientId: client.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(programmes);
+  })
+);
+
+router.post(
+  '/:id/programmes',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { nom, typeSplit, frequence, jours } = req.body;
+    if (!nom || !typeSplit || !frequence) {
+      return res.status(400).json({ error: 'nom, typeSplit et frequence sont requis' });
+    }
+    validateEnum(typeSplit, TypeSplit, 'typeSplit');
+    validateJours(jours);
+
+    const programme = await createProgrammeForClient(prisma, client.id, { nom, typeSplit, frequence, jours });
+    res.status(201).json(programme);
   })
 );
 

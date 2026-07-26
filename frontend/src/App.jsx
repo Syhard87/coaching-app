@@ -6,6 +6,9 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ClientsListPage } from './pages/ClientsListPage';
 import { ClientFormPage } from './pages/ClientFormPage';
+import { ProgrammesListPage } from './pages/ProgrammesListPage';
+import { ProgrammeFormPage } from './pages/ProgrammeFormPage';
+import { ProgrammeCalendarPage } from './pages/ProgrammeCalendarPage';
 
 function App() {
   return (
@@ -21,6 +24,13 @@ function App() {
               <Route path="/clients" element={<ClientsListPage />} />
               <Route path="/clients/new" element={<ClientFormPage />} />
               <Route path="/clients/:id" element={<ClientFormPage />} />
+              <Route path="/clients/:clientId/programmes" element={<ProgrammesListPage />} />
+              <Route path="/clients/:clientId/programmes/new" element={<ProgrammeFormPage />} />
+              <Route path="/clients/:clientId/programmes/:programmeId" element={<ProgrammeFormPage />} />
+              <Route
+                path="/clients/:clientId/programmes/:programmeId/calendrier"
+                element={<ProgrammeCalendarPage />}
+              />
             </Route>
           </Route>
         </Routes>

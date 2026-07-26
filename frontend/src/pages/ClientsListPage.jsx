@@ -92,6 +92,12 @@ export function ClientsListPage() {
                 <p className="text-sm text-gray-500">{labelObjectif(client.objectif)}</p>
               </div>
               <div className="flex shrink-0 gap-2 text-sm">
+                <Link
+                  to={`/clients/${client.id}/programmes`}
+                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
+                >
+                  Programmes
+                </Link>
                 <button
                   type="button"
                   onClick={() => setDuplicateSource(client)}

@@ -50,4 +50,32 @@ export const clientsApi = {
   update: (id, data) => request('PATCH', `/clients/${id}`, data),
   setArchive: (id, archive) => request('PATCH', `/clients/${id}/archive`, { archive }),
   duplicate: (id, data) => request('POST', `/clients/${id}/duplicate`, data),
+  splitSuggestion: (id) => request('GET', `/clients/${id}/split-suggestion`),
+  listProgrammes: (id) => request('GET', `/clients/${id}/programmes`),
+  createProgramme: (id, data) => request('POST', `/clients/${id}/programmes`, data),
+};
+
+export const programmesApi = {
+  get: (id) => request('GET', `/programmes/${id}`),
+  update: (id, data) => request('PATCH', `/programmes/${id}`, data),
+  remove: (id) => request('DELETE', `/programmes/${id}`),
+  duplicate: (id, targetClientId) => request('POST', `/programmes/${id}/duplicate`, { targetClientId }),
+  createCycle: (id, data) => request('POST', `/programmes/${id}/cycles`, data),
+};
+
+export const cyclesApi = {
+  update: (id, data) => request('PATCH', `/cycles/${id}`, data),
+  remove: (id) => request('DELETE', `/cycles/${id}`),
+};
+
+export const semainesApi = {
+  update: (id, data) => request('PATCH', `/semaines/${id}`, data),
+};
+
+export const templatesApi = {
+  archetypes: () => request('GET', '/templates/archetypes'),
+  list: () => request('GET', '/templates'),
+  get: (id) => request('GET', `/templates/${id}`),
+  create: (data) => request('POST', '/templates', data),
+  remove: (id) => request('DELETE', `/templates/${id}`),
 };

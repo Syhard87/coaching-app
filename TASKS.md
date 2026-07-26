@@ -29,14 +29,15 @@
   une fois le CRUD programme disponible)
 
 ## Phase 2 — Programme & personnalisation (Epic 2)
-- [ ] T2.1 Modèle de données : programmes, cycles, semaines_planifiees, jours_entrainement, exercices_programme
-- [ ] T2.2 API CRUD programme (jours, exercices)
-- [ ] T2.3 Bibliothèque de modèles de split (full body, half body, PPL, bro split) — US-2.1
-- [ ] T2.4 Algorithme de suggestion de split selon disponibilités/horaires (fonction pure + tests) — US-2.2
-- [ ] T2.5 Frontend : sélection/application d'un modèle de split, personnalisation des exercices
-- [ ] T2.6 Frontend : vue calendrier des cycles/semaines (statut normale/deload/test) — US-2.3
-- [ ] T2.7 Champ lien vidéo/démonstration par exercice — US-2.4
-- [ ] T2.8 Duplication de programme vers un autre client (reporté de la Phase 1, US-1.3)
+- [x] T2.1 Modèle de données : programmes, cycles, semaines_planifiees, jours_entrainement, exercices_programme
+  (déjà posé en Phase 0, vérifié conforme)
+- [x] T2.2 API CRUD programme (jours, exercices)
+- [x] T2.3 Bibliothèque de modèles de split (full body, half body, PPL, bro split) — US-2.1
+- [x] T2.4 Algorithme de suggestion de split selon disponibilités/horaires (fonction pure + tests) — US-2.2
+- [x] T2.5 Frontend : sélection/application d'un modèle de split, personnalisation des exercices
+- [x] T2.6 Frontend : vue calendrier des cycles/semaines (statut normale/deload/test) — US-2.3
+- [x] T2.7 Champ lien vidéo/démonstration par exercice — US-2.4
+- [x] T2.8 Duplication de programme vers un autre client (reporté de la Phase 1, US-1.3)
 
 ## Phase 3 — Nutrition (Epic 3)
 - [ ] T3.1 Algorithme BMR/TDEE + objectif calorique/macros (fonction pure + tests unitaires) — US-3.1
@@ -75,8 +76,7 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 1 — terminée. Prête à démarrer la Phase 2 (Epic 2 : programme &
-personnalisation).
+**Dernière phase active :** Phase 2 — terminée. Prête à démarrer la Phase 3 (Epic 3 : nutrition).
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -103,4 +103,30 @@ personnalisation).
 - Testé de bout en bout (register → login → CRUD → recherche → duplication → archivage) via
   navigateur piloté (claude-in-chrome) et via API (curl) contre la vraie base Neon ; données de
   test nettoyées après chaque vérification.
-- Branche : `feature/phase-1`, partie de `main` (post-merge PR #1).
+- Branche : `feature/phase-1`, mergée sur `main` via PR #2.
+
+**Notes Phase 2 :**
+- Modèle de données déjà complet depuis la Phase 0 (`Programme`, `Cycle`, `SemainePlanifiee`,
+  `JourEntrainement`, `ExerciceProgramme`, `TemplateProgramme`), y compris `lienVideo` (T2.7).
+- Algorithme de suggestion de split : fonction pure `suggererSplit()` dans
+  `backend/src/lib/splitSuggestion.js`, 9 tests unitaires (`node --test`), table de correspondance
+  jours dispo/expérience/horaires conforme à la section 3.3 du cahier des charges (horaires
+  irréguliers → toujours full body, quel que soit le nombre de jours).
+- Bibliothèque de splits intégrée (`backend/src/lib/splitTemplates.js`, `GET /api/templates/archetypes`)
+  couvrant les 4 types (full body, half body, PPL, bro split) avec jours + exercices pré-remplis.
+  Bibliothèque de modèles réutilisables entre clients via `TemplateProgramme`
+  (`POST/GET/DELETE /api/templates`, sauvegarde depuis un programme existant).
+- API programme imbriquée sous `/api/clients/:id/programmes` (liste/création) et
+  `/api/programmes/:id` (détail/édition/suppression/duplication), `/api/programmes/:id/cycles`,
+  `/api/cycles/:id`, `/api/semaines/:id` — ownership vérifiée à chaque niveau via
+  `backend/src/lib/ownership.js` (remonte jusqu'à `client.coachId`).
+- Duplication de programme (T2.8) : copie la structure jours/exercices vers un nouveau programme
+  chez un autre client (pas de cycles/semaines dupliqués — la planification temporelle ne se
+  reporte pas automatiquement).
+- Frontend : pages `ProgrammesListPage`, `ProgrammeFormPage` (sélection de split suggéré/archétype/
+  modèle sauvegardé, éditeur de jours/exercices avec lien vidéo, enregistrement en tant que modèle),
+  `ProgrammeCalendarPage` (cycles + grille de semaines avec statut normale/deload/test éditable).
+- Testé de bout en bout (suggestion de split, création depuis archétype, cycles/semaines, changement
+  de statut, duplication vers un autre client, sauvegarde en modèle) via navigateur piloté et API
+  contre la vraie base Neon ; données de test nettoyées après vérification.
+- Branche : `feature/phase-2`, partie de `main` (post-merge PR #2).
