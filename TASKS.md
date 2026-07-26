@@ -36,6 +36,7 @@
 - [ ] T2.5 Frontend : sélection/application d'un modèle de split, personnalisation des exercices
 - [ ] T2.6 Frontend : vue calendrier des cycles/semaines (statut normale/deload/test) — US-2.3
 - [ ] T2.7 Champ lien vidéo/démonstration par exercice — US-2.4
+- [ ] T2.8 Duplication de programme vers un autre client (reporté de la Phase 1, US-1.3)
 
 ## Phase 3 — Nutrition (Epic 3)
 - [ ] T3.1 Algorithme BMR/TDEE + objectif calorique/macros (fonction pure + tests unitaires) — US-3.1
