@@ -20,11 +20,13 @@
 - [x] T0.5 Migrations initiales à partir du modèle de données (cahier des charges section 4)
 
 ## Phase 1 — Authentification & gestion des clients (Epic 1)
-- [ ] T1.1 Modèle coach + authentification (bcrypt, sessions ou JWT)
-- [ ] T1.2 API CRUD clients (créer/lister/modifier/archiver) — US-1.1
-- [ ] T1.3 Frontend : formulaire de création client en une page — US-1.1
-- [ ] T1.4 Frontend : liste des clients, recherche/filtre, indicateur d'inactivité — US-1.2
-- [ ] T1.5 API + frontend : duplication profil/programme vers un autre client — US-1.3
+- [x] T1.1 Modèle coach + authentification (bcrypt, sessions ou JWT)
+- [x] T1.2 API CRUD clients (créer/lister/modifier/archiver) — US-1.1
+- [x] T1.3 Frontend : formulaire de création client en une page — US-1.1
+- [x] T1.4 Frontend : liste des clients, recherche/filtre, indicateur d'inactivité — US-1.2
+- [x] T1.5 API + frontend : duplication profil/programme vers un autre client — US-1.3
+  (duplication de **profil** uniquement ; la duplication de **programme** sera complétée en Phase 2
+  une fois le CRUD programme disponible)
 
 ## Phase 2 — Programme & personnalisation (Epic 2)
 - [ ] T2.1 Modèle de données : programmes, cycles, semaines_planifiees, jours_entrainement, exercices_programme
@@ -72,7 +74,8 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 0 — terminée. Prête à démarrer la Phase 1 (Epic 1 : auth & gestion clients).
+**Dernière phase active :** Phase 1 — terminée. Prête à démarrer la Phase 2 (Epic 2 : programme &
+personnalisation).
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
@@ -83,4 +86,20 @@ _Mettre à jour cette ligne à chaque session de travail :_
   (Docker), puis appliquée avec succès sur la vraie base **Neon** via `prisma migrate deploy` —
   connexion vérifiée (14 tables + `_prisma_migrations` présentes). `backend/.env` contient
   désormais le vrai `DATABASE_URL` Neon (non commité, cf. `.gitignore`).
-- Branche de travail : `feature/phase-0`.
+- Branche : `feature/phase-0`, mergée sur `main` via PR #1.
+
+**Notes Phase 1 :**
+- Auth JWT (bcryptjs + jsonwebtoken) : `POST /api/auth/register`, `POST /api/auth/login`,
+  `GET /api/auth/me`. Middleware `requireAuth` dans `backend/src/middleware/auth.js`. `JWT_SECRET`
+  ajouté à `.env` / `.env.example`.
+- API clients (`backend/src/routes/clients.routes.js`), scopée par coach : CRUD, recherche (`?search=`),
+  filtre archivés (`?archive=true`), indicateur d'inactivité calculé depuis `updatedAt`
+  (`?seuilJours=`, 30 par défaut), duplication de profil (`POST /clients/:id/duplicate`, vers un
+  nouveau client ou en écrasant un client existant via `targetClientId`).
+- Frontend : routing `react-router-dom`, `AuthContext` (JWT en `localStorage`), pages
+  login/register/liste clients/formulaire client (une page, nom+objectif seuls obligatoires,
+  grille de disponibilités optionnelle), modale de duplication avec confirmation avant écrasement.
+- Testé de bout en bout (register → login → CRUD → recherche → duplication → archivage) via
+  navigateur piloté (claude-in-chrome) et via API (curl) contre la vraie base Neon ; données de
+  test nettoyées après chaque vérification.
+- Branche : `feature/phase-1`, partie de `main` (post-merge PR #1).
