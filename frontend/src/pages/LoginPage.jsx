@@ -10,7 +10,7 @@ export function LoginPage() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (coach) return <Navigate to="/clients" replace />;
+  if (coach) return <Navigate to="/dashboard" replace />;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -18,7 +18,7 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate('/clients');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

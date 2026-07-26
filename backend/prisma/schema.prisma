@@ -182,6 +182,10 @@ model Cycle {
   nom           String
   ordre         Int
   dureeSemaines Int
+  // Date de début du cycle — sert à calculer quelle semaine planifiée correspond à
+  // "aujourd'hui" (tableau de bord T6.1). Optionnelle : un cycle créé sans date de
+  // démarrage explicite n'est simplement jamais compté comme "en cours" cette semaine.
+  dateDebut     DateTime? @default(now())
 
   semaines SemainePlanifiee[]
 

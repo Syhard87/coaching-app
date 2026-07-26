@@ -117,3 +117,12 @@ export const seancesApi = {
   update: (id, data) => request('PATCH', `/seances/${id}`, data),
   remove: (id) => request('DELETE', `/seances/${id}`),
 };
+
+export const dashboardApi = {
+  get: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
+    ).toString();
+    return request('GET', `/dashboard${qs ? `?${qs}` : ''}`);
+  },
+};

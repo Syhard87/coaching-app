@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { clientsApi } from '../lib/api';
 import { labelObjectif } from '../lib/constants';
 import { DuplicateClientModal } from '../components/DuplicateClientModal';
+import { MessageModal } from '../components/MessageModal';
 
 export function ClientsListPage() {
   const [clients, setClients] = useState([]);
@@ -11,6 +12,7 @@ export function ClientsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [duplicateSource, setDuplicateSource] = useState(null);
+  const [messageClient, setMessageClient] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -120,6 +122,13 @@ export function ClientsListPage() {
                 </Link>
                 <button
                   type="button"
+                  onClick={() => setMessageClient(client)}
+                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
+                >
+                  Message
+                </button>
+                <button
+                  type="button"
                   onClick={() => setDuplicateSource(client)}
                   className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
                 >
@@ -149,6 +158,8 @@ export function ClientsListPage() {
           }}
         />
       )}
+
+      {messageClient && <MessageModal client={messageClient} onClose={() => setMessageClient(null)} />}
     </div>
   );
 }

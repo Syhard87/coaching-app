@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "cycles" ADD COLUMN     "dateDebut" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;

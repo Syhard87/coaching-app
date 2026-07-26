@@ -13,10 +13,11 @@ router.patch(
     const cycle = await getOwnedCycle(req.coachId, req.params.id);
     if (!cycle) return res.status(404).json({ error: 'Cycle introuvable' });
 
-    const { nom, ordre } = req.body;
+    const { nom, ordre, dateDebut } = req.body;
     const data = {};
     if (nom !== undefined) data.nom = nom;
     if (ordre !== undefined) data.ordre = ordre;
+    if (dateDebut !== undefined) data.dateDebut = dateDebut ? new Date(dateDebut) : null;
 
     const updated = await prisma.cycle.update({
       where: { id: cycle.id },
