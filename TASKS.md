@@ -13,11 +13,11 @@
 ---
 
 ## Phase 0 — Initialisation du projet
-- [ ] T0.1 Initialiser le repo (dossiers `frontend/` et `backend/`)
-- [ ] T0.2 Configurer le projet backend Node.js/Express (squelette, package.json, scripts dev)
-- [ ] T0.3 Configurer le projet frontend React + Tailwind (Vite recommandé)
-- [ ] T0.4 Configurer Prisma + connexion à la base Neon (`.env.example`, variables d'environnement)
-- [ ] T0.5 Migrations initiales à partir du modèle de données (cahier des charges section 4)
+- [x] T0.1 Initialiser le repo (dossiers `frontend/` et `backend/`)
+- [x] T0.2 Configurer le projet backend Node.js/Express (squelette, package.json, scripts dev)
+- [x] T0.3 Configurer le projet frontend React + Tailwind (Vite recommandé)
+- [x] T0.4 Configurer Prisma + connexion à la base Neon (`.env.example`, variables d'environnement)
+- [x] T0.5 Migrations initiales à partir du modèle de données (cahier des charges section 4)
 
 ## Phase 1 — Authentification & gestion des clients (Epic 1)
 - [ ] T1.1 Modèle coach + authentification (bcrypt, sessions ou JWT)
@@ -72,4 +72,14 @@
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 0 — non démarrée
+**Dernière phase active :** Phase 0 — terminée. Prête à démarrer la Phase 1 (Epic 1 : auth & gestion clients).
+
+**Notes Phase 0 :**
+- Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
+- Frontend : Vite + React + Tailwind CSS v4 (plugin `@tailwindcss/vite`) dans `frontend/`.
+- Prisma : v6.19.3 (générateur classique `prisma-client-js`), schéma complet dans
+  `backend/prisma/schema.prisma` couvrant toutes les entités de la section 4 du cahier des charges.
+  Migration initiale (`prisma/migrations/20260726153909_init`) générée et testée contre un Postgres
+  local (Docker) — **la vraie base Neon n'a pas encore été créée**, `backend/.env` contient un
+  `DATABASE_URL` placeholder à remplacer avant `prisma migrate deploy` en production (voir T7.5).
+- Branche de travail : `feature/phase-0`.

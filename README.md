@@ -24,10 +24,26 @@ suivi des séances réelles et des mesures corporelles.
 .
 ├── docs/
 │   └── cahier-des-charges.md
-├── frontend/        (à venir — Phase 0)
-├── backend/         (à venir — Phase 0)
+├── frontend/        Vite + React + Tailwind
+├── backend/         Node.js/Express + Prisma
 ├── TASKS.md
 └── README.md
+```
+
+## Démarrage local
+
+```bash
+# Backend (http://localhost:3001)
+cd backend
+cp .env.example .env   # renseigner DATABASE_URL (Neon)
+npm install
+npx prisma migrate deploy
+npm run dev
+
+# Frontend (http://localhost:5173)
+cd frontend
+npm install
+npm run dev
 ```
 
 ## Pour reprendre le développement (agents Claude Code)

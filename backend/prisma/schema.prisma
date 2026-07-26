@@ -1,0 +1,333 @@
+// Schéma de données — voir docs/cahier-des-charges.md section 4 pour le modèle indicatif
+// et section 3 pour le détail fonctionnel de chaque entité.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Enums ---------------------------------------------------------------
+
+enum Sexe {
+  HOMME
+  FEMME
+}
+
+enum ObjectifClient {
+  PRISE_DE_MASSE
+  PERTE_DE_POIDS
+  REMISE_EN_FORME
+  PERFORMANCE
+}
+
+// Facteurs d'activité — cahier des charges section 3.2
+enum NiveauActivite {
+  SEDENTAIRE
+  LEGEREMENT_ACTIF
+  MODEREMENT_ACTIF
+  TRES_ACTIF
+  EXTREMEMENT_ACTIF
+}
+
+enum HoraireTravail {
+  BUREAU
+  POSTE_3X8
+  IRREGULIER
+  AUTRE
+}
+
+enum ExperienceSportive {
+  DEBUTANT
+  INTERMEDIAIRE
+  CONFIRME
+}
+
+enum JourSemaine {
+  LUNDI
+  MARDI
+  MERCREDI
+  JEUDI
+  VENDREDI
+  SAMEDI
+  DIMANCHE
+}
+
+enum Creneau {
+  MATIN
+  MIDI
+  SOIR
+}
+
+// Types de split — cahier des charges section 3.3
+enum TypeSplit {
+  FULL_BODY
+  HALF_BODY
+  PPL
+  BRO_SPLIT
+  PERSONNALISE
+}
+
+enum StatutSemaine {
+  NORMALE
+  DELOAD
+  TEST
+}
+
+enum MethodeCalcul {
+  AUTO
+  MANUEL
+}
+
+// Objectif calorique — cahier des charges section 3.2 étape 3
+enum TypeObjectifCalorique {
+  DEFICIT_LEGER
+  DEFICIT_MODERE
+  SURPLUS_LEGER
+  SURPLUS_MODERE
+  MAINTIEN
+}
+
+// --- Modèles ---------------------------------------------------------------
+
+model Coach {
+  id             String   @id @default(cuid())
+  nom            String
+  email          String   @unique
+  motDePasseHash String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clients            Client[]
+  templatesProgramme TemplateProgramme[]
+
+  @@map("coaches")
+}
+
+model Client {
+  id      String @id @default(cuid())
+  coachId String
+  coach   Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  nom          String
+  age          Int?
+  sexe         Sexe?
+  tailleCm     Float?
+  poidsInitial Float?
+  objectif     ObjectifClient
+  dateDebut    DateTime       @default(now())
+  notesSante   String?
+  suiviMedical Boolean        @default(false)
+
+  niveauActivite     NiveauActivite?
+  profession         String?
+  horaireTravail     HoraireTravail?
+  experienceSportive ExperienceSportive?
+
+  archive Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  disponibilites Disponibilite[]
+  programmes     Programme[]
+  seances        Seance[]
+  objectifDiete  ObjectifDiete?
+  journalDiete   JournalDiete[]
+  mesures        Mesure[]
+
+  @@map("clients")
+}
+
+model Disponibilite {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  jourSemaine JourSemaine
+  creneau     Creneau
+  disponible  Boolean     @default(true)
+
+  @@unique([clientId, jourSemaine, creneau])
+  @@map("disponibilites")
+}
+
+model Programme {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  nom       String
+  typeSplit TypeSplit
+  frequence Int
+  version   Int       @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cycles Cycle[]
+  jours  JourEntrainement[]
+
+  @@map("programmes")
+}
+
+model Cycle {
+  id          String    @id @default(cuid())
+  programmeId String
+  programme   Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+
+  nom           String
+  ordre         Int
+  dureeSemaines Int
+
+  semaines SemainePlanifiee[]
+
+  @@map("cycles")
+}
+
+model SemainePlanifiee {
+  id      String @id @default(cuid())
+  cycleId String
+  cycle   Cycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  numeroSemaine Int
+  statut        StatutSemaine @default(NORMALE)
+  notes         String?
+
+  jours JourEntrainement[]
+
+  @@map("semaines_planifiees")
+}
+
+// Un jour d'entraînement appartient soit directement au programme (jour "modèle",
+// répété chaque semaine du cycle), soit à une semaine précise si le coach veut
+// personnaliser cette semaine-là (ex. charge cible modifiée pour une semaine de deload).
+model JourEntrainement {
+  id          String            @id @default(cuid())
+  programmeId String?
+  programme   Programme?        @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  semaineId   String?
+  semaine     SemainePlanifiee? @relation(fields: [semaineId], references: [id], onDelete: Cascade)
+
+  nom   String
+  ordre Int
+
+  exercices ExerciceProgramme[]
+  seances   Seance[]
+
+  @@map("jours_entrainement")
+}
+
+model ExerciceProgramme {
+  id     String           @id @default(cuid())
+  jourId String
+  jour   JourEntrainement @relation(fields: [jourId], references: [id], onDelete: Cascade)
+
+  nom         String
+  series      Int
+  reps        String
+  chargeCible Float?
+  tempsRepos  Int?
+  notes       String?
+  lienVideo   String?
+
+  @@map("exercices_programme")
+}
+
+model Seance {
+  id       String            @id @default(cuid())
+  clientId String
+  client   Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  jourId   String?
+  jour     JourEntrainement? @relation(fields: [jourId], references: [id], onDelete: SetNull)
+
+  date     DateTime @default(now())
+  ressenti Int?
+  notes    String?
+
+  exercicesRealises ExerciceRealise[]
+
+  @@map("seances")
+}
+
+model ExerciceRealise {
+  id       String @id @default(cuid())
+  seanceId String
+  seance   Seance @relation(fields: [seanceId], references: [id], onDelete: Cascade)
+
+  nom            String
+  chargeRealisee Float?
+  repsRealisees  String?
+  notes          String?
+
+  @@map("exercices_realises")
+}
+
+model ObjectifDiete {
+  id       String @id @default(cuid())
+  clientId String @unique
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  methodeCalcul         MethodeCalcul          @default(AUTO)
+  tdeeCalcule           Float?
+  typeObjectifCalorique TypeObjectifCalorique?
+  caloriesCible         Int
+  proteinesCible        Int
+  glucidesCible         Int
+  lipidesCible          Int
+
+  updatedAt DateTime @updatedAt
+
+  @@map("objectifs_diete")
+}
+
+model JournalDiete {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  date      DateTime @default(now())
+  calories  Int?
+  proteines Int?
+  glucides  Int?
+  lipides   Int?
+  eau       Float?
+  repas     String?
+  notes     String?
+
+  @@unique([clientId, date])
+  @@map("journal_diete")
+}
+
+model Mesure {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  date     DateTime @default(now())
+  poids    Float?
+  bras     Float?
+  taille   Float?
+  poitrine Float?
+  cuisse   Float?
+  notes    String?
+
+  @@map("mesures")
+}
+
+model TemplateProgramme {
+  id      String @id @default(cuid())
+  coachId String
+  coach   Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  nom         String
+  typeSplit   TypeSplit
+  contenuJson Json
+
+  createdAt DateTime @default(now())
+
+  @@map("templates_programme")
+}
