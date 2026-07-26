@@ -10,10 +10,13 @@ import journalDieteRoutes from './routes/journalDiete.routes.js';
 import mesuresRoutes from './routes/mesures.routes.js';
 import seancesRoutes from './routes/seances.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import exportRoutes from './routes/export.routes.js';
 
 const app = express();
 
-app.use(cors());
+// En production, FRONTEND_URL restreint le CORS à l'origine Netlify réelle.
+// En dev (variable absente), toutes les origines sont acceptées pour rester simple.
+app.use(cors({ origin: process.env.FRONTEND_URL || true }));
 app.use(express.json());
 
 app.get('/health', (req, res) => {
@@ -30,6 +33,7 @@ app.use('/api/journal-diete', journalDieteRoutes);
 app.use('/api/mesures', mesuresRoutes);
 app.use('/api/seances', seancesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/export', exportRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

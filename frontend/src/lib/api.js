@@ -32,6 +32,38 @@ async function request(method, path, body) {
   return data;
 }
 
+// Téléchargement d'un fichier authentifié : un <a href> classique n'enverrait pas le
+// token, donc on récupère le contenu en mémoire puis on simule le clic sur un lien
+// temporaire pointant vers un blob local.
+async function telechargerFichier(path) {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error || `Erreur ${res.status}`);
+  }
+
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const nomFichier = disposition.match(/filename="([^"]+)"/)?.[1] || 'export';
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = nomFichier;
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  URL.revokeObjectURL(url);
+}
+
+export const exportApi = {
+  json: () => telechargerFichier('/export/json'),
+  csv: (entite) => telechargerFichier(`/export/csv/${entite}`),
+};
+
 export const authApi = {
   register: (nom, email, password) => request('POST', '/auth/register', { nom, email, password }),
   login: (email, password) => request('POST', '/auth/login', { email, password }),

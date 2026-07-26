@@ -15,6 +15,7 @@ import { SeanceFormPage } from './pages/SeanceFormPage';
 import { ProgressionPage } from './pages/ProgressionPage';
 import { MesuresPage } from './pages/MesuresPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ExportPage } from './pages/ExportPage';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
               <Route path="/clients/:clientId/seances/:seanceId" element={<SeanceFormPage />} />
               <Route path="/clients/:clientId/progression" element={<ProgressionPage />} />
               <Route path="/clients/:clientId/mesures" element={<MesuresPage />} />
+              <Route path="/export" element={<ExportPage />} />
             </Route>
           </Route>
         </Routes>

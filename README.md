@@ -10,6 +10,8 @@ suivi des séances réelles et des mesures corporelles.
   (contexte, fonctionnalités, modèle de données, architecture, user stories)
 - **Suivi des tâches** : [`TASKS.md`](./TASKS.md) — à consulter et mettre à jour à chaque session de
   développement (agents Claude Code : commencez toujours par lire ce fichier pour savoir où reprendre).
+- **Guide de déploiement** : [`docs/deploiement.md`](./docs/deploiement.md) (Render, Netlify, Neon —
+  étapes à réaliser par le coach, nécessitent des comptes sur ces services).
 
 ## Stack technique
 
@@ -23,9 +25,12 @@ suivi des séances réelles et des mesures corporelles.
 ```
 .
 ├── docs/
-│   └── cahier-des-charges.md
-├── frontend/        Vite + React + Tailwind
+│   ├── cahier-des-charges.md
+│   └── deploiement.md
+├── frontend/        Vite + React + Tailwind (PWA)
 ├── backend/         Node.js/Express + Prisma
+├── render.yaml      Blueprint de déploiement backend (Render)
+├── netlify.toml     Config de déploiement frontend (Netlify)
 ├── TASKS.md
 └── README.md
 ```

@@ -1,0 +1,11 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA côté client (React Router) : toute route inconnue doit retomber sur index.html,
+# sinon un rechargement sur /dashboard ou /clients/:id renvoie un 404 Netlify.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
