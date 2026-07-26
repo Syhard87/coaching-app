@@ -9,6 +9,7 @@ import { ClientFormPage } from './pages/ClientFormPage';
 import { ProgrammesListPage } from './pages/ProgrammesListPage';
 import { ProgrammeFormPage } from './pages/ProgrammeFormPage';
 import { ProgrammeCalendarPage } from './pages/ProgrammeCalendarPage';
+import { NutritionPage } from './pages/NutritionPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
                 path="/clients/:clientId/programmes/:programmeId/calendrier"
                 element={<ProgrammeCalendarPage />}
               />
+              <Route path="/clients/:clientId/nutrition" element={<NutritionPage />} />
             </Route>
           </Route>
         </Routes>
