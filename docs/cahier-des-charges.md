@@ -78,9 +78,13 @@ tout moment.
   reps, charge cible, temps de repos, notes)
 - **Démonstration visuelle de l'exercice** : en complément du lien vidéo existant (saisi librement par le
   coach), l'application tente une **correspondance automatique** du nom d'exercice avec une base externe
-  d'exercices standards illustrés par GIF (ex. ExerciseDB, gratuite/auto-hébergeable) et affiche le GIF
-  trouvé directement dans le programme. Si aucune correspondance n'est trouvée (exercice personnalisé/nommé
-  différemment), seul le lien vidéo du coach est affiché s'il existe ; sinon, rien n'est affiché.
+  d'exercices standards et affiche l'illustration trouvée directement dans le programme. Source retenue :
+  **free-exercise-db** (domaine public, sans clé d'API ni inscription), et non ExerciseDB comme envisagé
+  initialement — ExerciseDB exige soit une clé RapidAPI (quota gratuit très restrictif), soit un
+  auto-hébergement, deux options hors de portée d'un agent autonome. Compromis assumé : free-exercise-db
+  fournit des **photos fixes** (position de départ/fin du mouvement), pas un GIF animé. Si aucune
+  correspondance n'est trouvée (exercice personnalisé/nommé différemment), seul le lien vidéo du coach est
+  affiché s'il existe ; sinon, rien n'est affiché.
   **Pas d'illustration générée par IA** pour représenter la forme d'un exercice : le risque d'erreur de
   posture/mouvement représentée est réel, ce qui en ferait une source non fiable pour un usage lié à la
   sécurité du client (voir principe déjà posé en section 6).
