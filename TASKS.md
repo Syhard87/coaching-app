@@ -81,14 +81,25 @@
 - [ ] Export PDF d'un programme/bilan
 - [ ] Espace client (connexion, saisie autonome)
 
+## Phase 9 — Prospection (Epic 8) & GIF d'exercices (extension Epic 2)
+- [ ] T9.1 Modèle prospects + slug coach (migration)
+- [ ] T9.2 API publique (sans auth) de soumission de prospect via le slug — US-8.1
+- [ ] T9.3 Frontend : page publique de capture — US-8.1
+- [ ] T9.4 Frontend : onglet Prospects (liste, changement de statut) — US-8.2
+- [ ] T9.5 Conversion prospect → client — US-8.3
+- [ ] T9.6 Bouton "copier le lien à partager" dans le dashboard
+- [ ] T9.7 Intégration API GIF d'exercices — US-2.5
+- [ ] T9.8 (optionnel) Cache local des GIFs pour limiter les appels API externes
+
 ---
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 7 — T7.1/T7.2 terminés (PWA + export). T7.3-T7.5 (déploiement réel)
-**non faits** : nécessitent des comptes Render/Netlify que l'agent Claude Code ne peut pas créer —
-config prête (`render.yaml`, `netlify.toml`) et guide pas-à-pas dans `docs/deploiement.md`, à suivre
-par le coach. **La V1 n'est donc pas encore terminée.**
+**Dernière phase active :** Phase 9 (en cours) — Prospection & GIF d'exercices. Phase 7 : T7.1/T7.2
+terminés (PWA + export). T7.3-T7.5 (déploiement réel) **non faits** : nécessitent des comptes
+Render/Netlify que l'agent Claude Code ne peut pas créer — config prête (`render.yaml`, `netlify.toml`)
+et guide pas-à-pas dans `docs/deploiement.md`, à suivre par le coach. **La V1 n'est donc pas encore
+terminée.**
 
 **Notes Phase 0 :**
 - Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.

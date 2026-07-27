@@ -76,6 +76,14 @@ tout moment.
 ### 3.3 Création de programme — types de séances et personnalisation
 - Un programme est structuré en **jours d'entraînement**, chacun avec une liste d'exercices (nom, séries,
   reps, charge cible, temps de repos, notes)
+- **Démonstration visuelle de l'exercice** : en complément du lien vidéo existant (saisi librement par le
+  coach), l'application tente une **correspondance automatique** du nom d'exercice avec une base externe
+  d'exercices standards illustrés par GIF (ex. ExerciseDB, gratuite/auto-hébergeable) et affiche le GIF
+  trouvé directement dans le programme. Si aucune correspondance n'est trouvée (exercice personnalisé/nommé
+  différemment), seul le lien vidéo du coach est affiché s'il existe ; sinon, rien n'est affiché.
+  **Pas d'illustration générée par IA** pour représenter la forme d'un exercice : le risque d'erreur de
+  posture/mouvement représentée est réel, ce qui en ferait une source non fiable pour un usage lié à la
+  sécurité du client (voir principe déjà posé en section 6).
 - **Types de split disponibles**, sélectionnables en un clic (modèles pré-remplis, puis personnalisables) :
   - **Full body** : tout le corps à chaque séance — adapté aux emplois du temps chargés (2-3 jours/semaine)
   - **Half body / Upper-Lower** : alternance haut du corps / bas du corps — 4 jours/semaine
@@ -135,9 +143,26 @@ tout moment.
 - Consultation de son programme du jour/de la semaine, saisie de ses propres séances/repas/mesures
 - Notifications de rappel de séance
 
+### 3.10 Prospection — capter les demandes reçues hors app
+Un coach reçoit des demandes de contact hors de l'application (Instagram, bouche-à-oreille, WhatsApp) qu'il
+perd faute d'un endroit pour les centraliser.
+
+- Chaque coach dispose d'un **slug public unique** (dérivé de son nom à la création, modifiable ensuite dans
+  son profil)
+- **Page publique, sans authentification**, accessible via ce slug (ex. `/p/:slug`), avec un formulaire :
+  nom, contact (email ou téléphone), objectif, message libre
+- La soumission du formulaire crée un **Prospect** rattaché au coach correspondant, sans exposer aucune
+  autre donnée du coach ou de ses clients
+- Onglet **"Prospects"** dans le tableau de bord coach : liste des prospects avec un statut modifiable
+  (nouveau / contacté / converti / perdu)
+- Bouton **"Convertir en client"** : crée un client pré-rempli (nom, objectif, message en note) à partir du
+  prospect, en réutilisant la logique de duplication déjà en place (voir US-1.3 / T2.8)
+- Bouton **"Copier le lien à partager"** dans le tableau de bord, pour transmettre facilement l'URL de la
+  page publique du coach
+
 ## 4. Modèle de données (structure indicative)
 
-- `coaches` (id, nom, email, mot_de_passe_hash)
+- `coaches` (id, nom, email, mot_de_passe_hash, **slug** [unique])
 - `clients` (id, coach_id, nom, âge, sexe, taille_cm, poids_initial, objectif, date_début, notes_santé,
   suivi_médical, niveau_activité, profession, expérience_sportive)
 - `disponibilites` (id, client_id, jour_semaine, créneau [matin/midi/soir], disponible)
@@ -153,6 +178,8 @@ tout moment.
 - `journal_diete` (id, client_id, date, calories, protéines, glucides, lipides, eau, repas, notes)
 - `mesures` (id, client_id, date, poids, bras, taille, poitrine, cuisse, notes)
 - `templates_programme` (id, coach_id, nom, type_split, contenu_json)
+- `prospects` (id, coach_id, nom, contact, objectif, message, statut [nouveau/contacté/converti/perdu],
+  date_création, client_id nullable une fois converti)
 
 ## 5. Architecture technique (décisions figées)
 
@@ -185,6 +212,10 @@ le tout en s'appuyant sur ce cahier des charges comme fil conducteur.
 - **Données de santé sensibles** : les notes médicales et données nutritionnelles/mesures sont des données
   personnelles sensibles. Prévoir un chiffrement des données au repos et un accès restreint par authentification
   dès la V1, même en mono-utilisateur.
+- **Données de prospection** : les données saisies par un prospect (nom, email/téléphone, objectif, message)
+  sont des données personnelles, moins sensibles que les notes santé d'un client mais à protéger avec la
+  même rigueur d'accès : uniquement visibles par le coach auquel le prospect est rattaché, jamais exposées
+  via la page publique de soumission (formulaire en écriture seule côté public).
 - **RGPD (si clients français/UE)** : possibilité pour un client d'obtenir ou de faire supprimer ses données
   s'il a un accès direct (phase 2).
 - **Les algorithmes sont assistifs, pas prescriptifs** : toute valeur calculée automatiquement (calories,
@@ -245,6 +276,8 @@ réelles plutôt que des problèmes hypothétiques.
   intégrés, afin de piloter la progression dans la durée (voir 3.4).
 - **US-2.4** — En tant que coach, je veux attacher un lien vidéo/note à un exercice, afin que le client
   comprenne le mouvement sans ambiguïté.
+- **US-2.5** — En tant que coach, je veux qu'un GIF de démonstration s'affiche automatiquement pour les
+  exercices standards, afin de ne pas chercher une vidéo à chaque fois (voir 3.3).
 
 ### Epic 3 — Suivi nutritionnel
 - **US-3.1** — En tant que coach, je veux des objectifs caloriques/macros calculés automatiquement par
@@ -271,6 +304,14 @@ réelles plutôt que des problèmes hypothétiques.
   (salle de sport), afin de ne pas être bloqué en plein cours.
 - **US-7.2** — En tant que coach, je veux exporter mes données à tout moment, afin de ne jamais dépendre
   d'un éditeur tiers pour récupérer mon travail.
+
+### Epic 8 — Prospection
+- **US-8.1** — En tant que coach, je veux une page publique où un prospect laisse ses coordonnées et son
+  objectif, afin de ne pas perdre les demandes reçues par message (voir 3.10).
+- **US-8.2** — En tant que coach, je veux un pipeline simple (nouveau/contacté/converti/perdu), afin de ne
+  pas oublier de relancer un prospect intéressé.
+- **US-8.3** — En tant que coach, je veux convertir un prospect en client en un clic, afin de ne pas
+  ressaisir ses informations.
 
 ### Priorisation V1
 | Priorité | Epics |
