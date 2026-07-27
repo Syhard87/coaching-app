@@ -82,20 +82,20 @@
 - [ ] Espace client (connexion, saisie autonome)
 
 ## Phase 9 — Prospection (Epic 8) & GIF d'exercices (extension Epic 2)
-- [ ] T9.1 Modèle prospects + slug coach (migration)
-- [ ] T9.2 API publique (sans auth) de soumission de prospect via le slug — US-8.1
-- [ ] T9.3 Frontend : page publique de capture — US-8.1
-- [ ] T9.4 Frontend : onglet Prospects (liste, changement de statut) — US-8.2
-- [ ] T9.5 Conversion prospect → client — US-8.3
-- [ ] T9.6 Bouton "copier le lien à partager" dans le dashboard
-- [ ] T9.7 Intégration API GIF d'exercices — US-2.5
-- [ ] T9.8 (optionnel) Cache local des GIFs pour limiter les appels API externes
+- [x] T9.1 Modèle prospects + slug coach (migration)
+- [x] T9.2 API publique (sans auth) de soumission de prospect via le slug — US-8.1
+- [x] T9.3 Frontend : page publique de capture — US-8.1
+- [x] T9.4 Frontend : onglet Prospects (liste, changement de statut) — US-8.2
+- [x] T9.5 Conversion prospect → client — US-8.3
+- [x] T9.6 Bouton "copier le lien à partager" dans le dashboard
+- [x] T9.7 Intégration API GIF d'exercices — US-2.5
+- [x] T9.8 Cache local des GIFs pour limiter les appels API externes
 
 ---
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 9 (en cours) — Prospection & GIF d'exercices. Phase 7 : T7.1/T7.2
+**Dernière phase active :** Phase 9 terminée (Prospection & GIF d'exercices). Phase 7 : T7.1/T7.2
 terminés (PWA + export). T7.3-T7.5 (déploiement réel) **non faits** : nécessitent des comptes
 Render/Netlify que l'agent Claude Code ne peut pas créer — config prête (`render.yaml`, `netlify.toml`)
 et guide pas-à-pas dans `docs/deploiement.md`, à suivre par le coach. **La V1 n'est donc pas encore
@@ -283,3 +283,49 @@ terminée.**
 - Petit durcissement de sécurité en cours de route : CORS restreignable via `FRONTEND_URL`
   (`backend/src/app.js`), documenté dans `.env.example` — reste permissif par défaut en local.
 - Branche : `feature/phase-7`, partie de `main` (post-merge PR #7).
+
+**Notes Phase 9 :**
+- **Slug coach** (T9.1) : champ `Coach.slug` (unique, `backend/src/lib/slug.js` pour la génération/
+  validation). Migration `add_prospects_and_coach_slug` : le coach existant sur Neon a été rétro-rempli
+  automatiquement (`slug` dérivé du nom + suffixe de l'id) avant de poser la contrainte `NOT NULL` +
+  `UNIQUE`, pour ne pas casser la donnée déjà en base. À l'inscription, un slug est généré depuis le nom
+  (`genererSlugDisponible`, suffixe numérique en cas de collision) ; modifiable ensuite via
+  `PATCH /api/auth/me` — exposé dans l'onglet Prospects plutôt que dans une page "profil" dédiée (aucune
+  page profil n'existait avant cette phase, et le slug n'a de sens que là où le lien public est affiché).
+- **Modèle Prospect** (T9.1) : `coachId`, `nom`, `contact`, `objectif`/`message` en texte libre, `statut`
+  (enum `StatutProspect`), `clientId` nullable renseigné à la conversion. `objectif` reste du texte libre
+  côté prospect (saisi sans connaître l'énum `ObjectifClient`) — la conversion en client (US-8.3) demande
+  donc au coach de choisir l'objectif enum au moment de convertir ; le texte d'origine (objectif + message
+  + contact) est reporté dans `notesSante` du client créé, seul champ texte libre du modèle Client.
+- **Routes publiques** (T9.2) : nouveau routeur `backend/src/routes/public.routes.js` monté sur
+  `/api/public`, **sans** `requireAuth` — seul point d'entrée non authentifié de l'API avec `/health`.
+  `GET /public/coach/:slug` ne renvoie que le nom du coach (rien de sensible) ; `POST
+  /public/coach/:slug/prospects` crée le Prospect en écriture seule.
+- **Frontend prospection** (T9.3/T9.4/T9.6) : route publique `/p/:slug` (`PublicProspectPage`, hors
+  `ProtectedRoute`/`Layout`, comme `/login`/`/register`). Onglet `/prospects` (`ProspectsPage`) : lien
+  public + bouton copier (`navigator.clipboard`, pattern identique à `MessageModal`), édition inline du
+  slug, liste des prospects avec `<select>` de statut et bouton "Convertir en client"
+  (`ConvertProspectModal`, demande l'objectif enum avant conversion).
+- **Conversion** (T9.5) : `POST /api/prospects/:id/convert` — ne réutilise pas littéralement l'endpoint
+  `POST /clients/:id/duplicate` (pas de client source à dupliquer, juste un prospect), mais suit le même
+  principe (création directe scopée au coach connecté, dans une transaction avec la mise à jour du
+  prospect). Refuse la re-conversion d'un prospect déjà converti (409).
+- **GIF d'exercices** (T9.7/T9.8) : décision assumée après recherche — la vraie base ExerciseDB (citée
+  dans le cahier des charges) exige une clé RapidAPI (quota gratuit très restrictif, 10 req/j) ou un
+  auto-hébergement, hors de portée d'un agent autonome (même limite que la création de comptes
+  Render/Netlify en Phase 7). Utilisation à la place de **free-exercise-db**
+  (github.com/yuhonas/free-exercise-db), jeu de données du domaine public sans clé ni inscription — mais
+  qui fournit des **photos fixes** (position de départ/fin), pas un GIF animé ; compromis documenté dans
+  le cahier des charges et le code (`backend/src/lib/exerciceGifs.js`). Dictionnaire de traduction
+  français → anglais couvrant les ~25 noms d'exercice de la bibliothèque de splits (`splitTemplates.js`) ;
+  un exercice personnalisé ne matche jamais et retombe sur le lien vidéo du coach (ou rien), conformément
+  à la section 3.3. Cache mémoire (`Map`) pour le dataset externe et pour chaque résultat déjà cherché
+  (T9.8) — suffisant pour "limiter les appels API externes" sans ajouter de table dédiée. Route
+  `GET /api/exercices/gif?nom=`, composant `ExerciceGifPreview` affiché à côté du champ lien vidéo dans
+  `ProgrammeFormPage`.
+- Testé de bout en bout via navigateur piloté et API contre la vraie base Neon : soumission depuis la
+  page publique → apparition dans l'onglet Prospects → changement de statut → conversion en client
+  (notes pré-remplies vérifiées) → lien "Voir le client" ; édition du slug vérifiée avec mise à jour
+  immédiate du lien affiché ; GIFs vérifiés affichés automatiquement pour les 6 exercices d'un programme
+  "Full body" généré depuis l'archétype. Données de test nettoyées après vérification.
+- Branche : `feature/phase-9`.

@@ -91,6 +91,14 @@ enum TypeObjectifCalorique {
   MAINTIEN
 }
 
+// Pipeline de prospection — cahier des charges section 3.10
+enum StatutProspect {
+  NOUVEAU
+  CONTACTE
+  CONVERTI
+  PERDU
+}
+
 // --- Modèles ---------------------------------------------------------------
 
 model Coach {
@@ -98,11 +106,15 @@ model Coach {
   nom            String
   email          String   @unique
   motDePasseHash String
+  // Slug public utilisé par la page de prospection sans authentification (/p/:slug) —
+  // dérivé du nom à la création, modifiable ensuite dans le profil. Cahier des charges section 3.10.
+  slug           String   @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   clients            Client[]
   templatesProgramme TemplateProgramme[]
+  prospects          Prospect[]
 
   @@map("coaches")
 }
@@ -132,12 +144,13 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  disponibilites Disponibilite[]
-  programmes     Programme[]
-  seances        Seance[]
-  objectifDiete  ObjectifDiete?
-  journalDiete   JournalDiete[]
-  mesures        Mesure[]
+  disponibilites     Disponibilite[]
+  programmes         Programme[]
+  seances            Seance[]
+  objectifDiete      ObjectifDiete?
+  journalDiete       JournalDiete[]
+  mesures            Mesure[]
+  prospectsConvertis Prospect[]
 
   @@map("clients")
 }
@@ -334,4 +347,28 @@ model TemplateProgramme {
   createdAt DateTime @default(now())
 
   @@map("templates_programme")
+}
+
+// Demande reçue hors app (Instagram, bouche-à-oreille...) via la page publique du coach
+// (/p/:slug, sans authentification) — cahier des charges section 3.10.
+model Prospect {
+  id      String @id @default(cuid())
+  coachId String
+  coach   Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  nom      String
+  contact  String
+  objectif String?
+  message  String?
+  statut   StatutProspect @default(NOUVEAU)
+
+  // Renseigné une fois le prospect converti en client (US-8.3) ; le prospect reste
+  // visible dans l'historique même après conversion ou suppression du client.
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  dateCreation DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("prospects")
 }

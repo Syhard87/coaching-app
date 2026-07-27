@@ -68,6 +68,7 @@ export const authApi = {
   register: (nom, email, password) => request('POST', '/auth/register', { nom, email, password }),
   login: (email, password) => request('POST', '/auth/login', { email, password }),
   me: () => request('GET', '/auth/me'),
+  updateSlug: (slug) => request('PATCH', '/auth/me', { slug }),
 };
 
 export const clientsApi = {
@@ -157,4 +158,20 @@ export const dashboardApi = {
     ).toString();
     return request('GET', `/dashboard${qs ? `?${qs}` : ''}`);
   },
+};
+
+export const prospectsApi = {
+  list: (statut) => request('GET', `/prospects${statut ? `?statut=${statut}` : ''}`),
+  setStatut: (id, statut) => request('PATCH', `/prospects/${id}`, { statut }),
+  convert: (id, objectif) => request('POST', `/prospects/${id}/convert`, { objectif }),
+};
+
+// Pas de token requis : page publique de prospection (US-8.1), appelée sans être connecté.
+export const publicApi = {
+  getCoach: (slug) => request('GET', `/public/coach/${slug}`),
+  submitProspect: (slug, data) => request('POST', `/public/coach/${slug}/prospects`, data),
+};
+
+export const exercicesApi = {
+  gif: (nom) => request('GET', `/exercices/gif?nom=${encodeURIComponent(nom)}`),
 };
