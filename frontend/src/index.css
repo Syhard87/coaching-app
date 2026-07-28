@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+@import "@fontsource/oswald/400.css";
+@import "@fontsource/oswald/600.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/* Identité visuelle "carnet d'entraînement" — cahier des charges section 7.1.
+   Tokens Tailwind v4 (CSS-first, @theme) : jamais de couleurs codées en dur dans les composants. */
+/* "static" force la génération de toutes ces variables même si aucune classe ne les
+   utilise encore (T10.0c pose le socle avant la reconstruction des écrans en T10.4+). */
+@theme static {
+  --font-heading: "Oswald", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Graphite/chalk — fond et texte neutres */
+  --color-graphite-950: #14161a;
+  --color-graphite-900: #1c1f24;
+  --color-graphite-800: #2a2e35;
+  --color-graphite-700: #3d424b;
+  --color-graphite-600: #565c66;
+  --color-graphite-500: #767c87;
+  --color-graphite-400: #9aa0a9;
+  --color-chalk-300: #c7cad0;
+  --color-chalk-200: #dfe1e4;
+  --color-chalk-100: #eef0f1;
+  --color-chalk-50: #f7f8f8;
+
+  /* Orange-fer — accent principal */
+  --color-accent-700: #9a3f1c;
+  --color-accent-600: #bd4e22;
+  --color-accent-500: #d95f2b;
+  --color-accent-400: #e58253;
+  --color-accent-100: #fbe4d6;
+
+  /* Bleu-acier et vert-mousse — accents secondaires (objectifs atteints, états positifs) */
+  --color-steel-600: #3a5a6b;
+  --color-steel-500: #4d7488;
+  --color-steel-100: #dde8ec;
+
+  --color-moss-600: #4d6b45;
+  --color-moss-500: #66875c;
+  --color-moss-100: #e2eadf;
+}
