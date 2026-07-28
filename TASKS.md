@@ -1,274 +1,67 @@
-# Suivi des tâches — Application de coaching sportif
+Suivi des tâches — Application de coaching sportif
+Instructions pour les agents Claude Code
+Se référer à docs/cahier-des-charges.md (version définitive) pour le détail fonctionnel de chaque tâche — c'est la référence unique du projet, elle intègre le tri explicite des fonctionnalités (section 10, Roadmap) pour éviter toute discussion répétée sur le périmètre.
+Cocher [x] une tâche seulement une fois codée et testée contre la vraie base Neon.
+Respecter l'ordre des phases.
+Committer, pousser et ouvrir une PR à la fin de chaque phase — ne pas enchaîner directement sur la phase suivante sans validation humaine.
+Mettre à jour la ligne "État global" en bas de ce fichier à chaque session.
+Phases 0 à 9 — ✅ Terminées, déployées en production
 
-## Instructions pour les agents Claude Code
-- Se référer à `docs/cahier-des-charges.md` pour le détail fonctionnel de chaque tâche (les références
-  "US-x.x" renvoient aux user stories de la section 8 du cahier des charges).
-- Cocher `[x]` une tâche seulement une fois codée **et** testée.
-- Respecter l'ordre des phases : ne pas commencer une phase avant que les prérequis de la précédente soient
-  cochés (Phase 0 conditionne tout le reste).
-- Si une tâche est en cours mais non terminée, ajouter `(en cours)` à côté plutôt que de la cocher.
-- Ne pas modifier les décisions d'architecture (stack, hébergement) sans les reporter aussi dans le cahier
-  des charges — les deux documents doivent rester cohérents.
+Authentification, gestion clients, création de programme (splits, cycles, GIF de démonstration via free-exercise-db), suivi des séances et progression, nutrition (calcul automatique Mifflin-St Jeor), mesures corporelles, tableau de bord, PWA + export de données, prospection (page publique + pipeline). Détail complet de l'implémentation : historique Git (PRs #1 à #9) et notes de chaque phase conservées dans les commits — non reproduites ici pour ne pas alourdir ce fichier.
 
----
+Déployé sur : Netlify (frontend), Render (backend), Neon (base de données).
 
-## Phase 0 — Initialisation du projet
-- [x] T0.1 Initialiser le repo (dossiers `frontend/` et `backend/`)
-- [x] T0.2 Configurer le projet backend Node.js/Express (squelette, package.json, scripts dev)
-- [x] T0.3 Configurer le projet frontend React + Tailwind (Vite recommandé)
-- [x] T0.4 Configurer Prisma + connexion à la base Neon (`.env.example`, variables d'environnement)
-- [x] T0.5 Migrations initiales à partir du modèle de données (cahier des charges section 4)
+Phase 9.5 — Authentification Google OAuth (avant la Phase 10)
 
-## Phase 1 — Authentification & gestion des clients (Epic 1)
-- [x] T1.1 Modèle coach + authentification (bcrypt, sessions ou JWT)
-- [x] T1.2 API CRUD clients (créer/lister/modifier/archiver) — US-1.1
-- [x] T1.3 Frontend : formulaire de création client en une page — US-1.1
-- [x] T1.4 Frontend : liste des clients, recherche/filtre, indicateur d'inactivité — US-1.2
-- [x] T1.5 API + frontend : duplication profil/programme vers un autre client — US-1.3
-  (duplication de **profil** uniquement ; la duplication de **programme** sera complétée en Phase 2
-  une fois le CRUD programme disponible)
+Remplace l'authentification email/mot de passe + JWT. Voir cahier des charges section 7.
 
-## Phase 2 — Programme & personnalisation (Epic 2)
-- [x] T2.1 Modèle de données : programmes, cycles, semaines_planifiees, jours_entrainement, exercices_programme
-  (déjà posé en Phase 0, vérifié conforme)
-- [x] T2.2 API CRUD programme (jours, exercices)
-- [x] T2.3 Bibliothèque de modèles de split (full body, half body, PPL, bro split) — US-2.1
-- [x] T2.4 Algorithme de suggestion de split selon disponibilités/horaires (fonction pure + tests) — US-2.2
-- [x] T2.5 Frontend : sélection/application d'un modèle de split, personnalisation des exercices
-- [x] T2.6 Frontend : vue calendrier des cycles/semaines (statut normale/deload/test) — US-2.3
-- [x] T2.7 Champ lien vidéo/démonstration par exercice — US-2.4
-- [x] T2.8 Duplication de programme vers un autre client (reporté de la Phase 1, US-1.3)
+ T9.5.1 (manuel, coach) Créer un projet Google Cloud, configurer l'écran de consentement OAuth, générer Client ID + Client Secret
+ T9.5.2 Backend : intégration OAuth2 Google (ex. passport-google-oauth20 ou équivalent), migration du modèle Coach (retirer l'obligation de mot_de_passe_hash, ajouter googleId, avatarUrl)
+ T9.5.3 Frontend : bouton "Se connecter avec Google", suppression du formulaire email/mot de passe
+ T9.5.4 Migration du compte coach existant : le relier à son compte Google sans perte de données (clients, programmes, historique conservés)
+ T9.5.5 Testé de bout en bout (connexion réelle, déconnexion, reconnexion) contre la vraie base Neon
+⚠️ Nettoyage préalable à la Phase 10
 
-## Phase 3 — Nutrition (Epic 3)
-- [x] T3.1 Algorithme BMR/TDEE + objectif calorique/macros (fonction pure + tests unitaires) — US-3.1
-- [x] T3.2 API objectifs_diete (auto/manuel) + journal_diete (CRUD)
-- [x] T3.3 Frontend : affichage/édition des objectifs nutritionnels calculés
-- [x] T3.4 Frontend : journal alimentaire quotidien + moyennes glissantes 7/30 jours
-- [x] T3.5 Frontend : graphique combiné poids + calories — US-3.2
-  (a nécessité une API `mesures` minimale en avance sur T5.1, décision validée avec l'utilisateur —
-  Phase 5 se concentrera sur l'écran dédié tours/mesures et les alertes d'inactivité T5.2)
+Un premier travail sur un modèle de "formules à l'heure" avait été commencé puis abandonné (changement de modèle économique vers des abonnements mensuels par module). Avant de démarrer la Phase 10 :
 
-## Phase 4 — Suivi des séances (Epic 4)
-- [x] T4.1 API : log de séance pré-rempli depuis le jour de programme prévu — US-4.1
-- [x] T4.2 Frontend : formulaire de séance (charge/reps réalisées, ressenti, notes)
-- [x] T4.3 Frontend : graphique de progression de charge par exercice — US-4.2
+ T10.0a Vérifier qu'aucun commit lié aux "formules à l'heure" n'est mergé sur main
+ T10.0b Supprimer toute branche feature/phase-10 résiduelle, repartir de main à jour
+Phase 10 — Design system + Réorganisation à 3 onglets + Abonnements par module
 
-## Phase 5 — Mesures corporelles
-- [x] T5.1 API + frontend : CRUD mesures (poids, tours), graphique d'évolution
-  (API posée en Phase 3, écran dédié `MesuresPage` avec tours bras/taille/poitrine/cuisse et
-  graphiques poids + tours construit en Phase 5)
-- [x] T5.2 Alerte si absence de mesure récente (seuil configurable, 30 jours par défaut)
+Remplace définitivement l'ancien modèle et l'ancien style visuel en une seule fois — pas de refonte graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.1.
 
-## Phase 6 — Tableau de bord & communication (Epic 5, 6)
-- [x] T6.1 Tableau de bord coach (clients actifs, séances de la semaine, relances, deload/test) — US-6.1
-  (a nécessité d'ajouter `dateDebut` sur `Cycle`, absent du modèle initial — voir notes ci-dessous)
-- [x] T6.2 Génération de message pré-rempli partageable WhatsApp/SMS — US-5.1
+ T10.0c Mettre en place les tokens Tailwind (couleurs, polices Oswald/Inter/IBM Plex Mono) et installer Framer Motion — base appliquée à tous les écrans reconstruits dans cette phase
+ T10.1 Modèle catalogue_abonnements + client_abonnements, migration, catalogue par défaut à la création d'un compte coach (grille : Sport/Diète 50€ 1 mois, 120€ 3 mois, 180€ 6 mois ; Pack Complet 85€/200€/300€)
+ T10.2 API : vendre un abonnement à un client, consulter l'état des modules actifs, calcul automatique de la date de fin
+ T10.3 Logique d'accès aux modules (fonction pure, testée) : Sport actif / Diète actif / aucun, d'après les abonnements en cours du client
+ T10.4 Frontend : réorganiser la fiche client en exactement 3 onglets, avec le nouveau design system — Bilan (fusionne Profil + Mesures existants), Programme sportif (fusionne Programmes + Séances existants), Nutritionnel (reprend l'onglet Diète existant)
+ T10.5 Frontend : état "non souscrit" avec invitation à vendre sur Programme sportif / Nutritionnel quand l'abonnement correspondant n'est pas actif (jamais masqué ni vide sans explication)
+ T10.6 Bandeau de rappel sécurité médicale (non bloquant) sur l'onglet Bilan si suivi_medical_en_cours est coché, avant validation d'un objectif calorique ou d'un programme intensif
+ T10.7 Carte "Abonnements à renouveler bientôt" sur le tableau de bord, barre de progression animée
+ T10.8 Frontend : gestion du catalogue d'abonnements dans les paramètres coach (édition prix/durées)
+Phase 11 — Planning & réservation (V1.1)
+ T11.1 Modèle creneaux_disponibles + reservations, migration
+ T11.2 API : définir des créneaux disponibles (récurrents ou ponctuels)
+ T11.3 API : réserver un créneau pour un client (le coach réserve en son nom en attendant un espace client), changement de statut (confirmée/annulée/honorée)
+ T11.4 Frontend : page "Planning" coach (définir ses créneaux, vue des réservations)
+ T11.5 Frontend : séances à venir affichées dans l'onglet Programme sportif, distinctes de l'historique
+ T11.6 Carte "Prochaines réservations" sur le tableau de bord
+Phase 12 — Photos de progression (V1.1)
+ T12.1 Modèle photos_progression, migration, stockage avec protection renforcée (voir cahier des charges section 8 — traitement équivalent aux données de santé)
+ T12.2 API upload/liste/suppression, scoping strict par coach, jamais d'URL publique prévisible
+ T12.3 Frontend : ajout de photo datée depuis l'onglet Bilan, frise chronologique de comparaison
+Phase 13 — Objectifs client structurés (V1.1)
+ T13.1 Modèle objectifs_client (description, valeur cible, unité, échéance, statut), migration
+ T13.2 API CRUD objectifs
+ T13.3 Frontend : affichage sur l'onglet Bilan avec indicateur de progression vers l'échéance
+Phase 14+ — V2 (ne pas commencer avant validation complète de la V1.1)
 
-## Phase 7 — PWA, export, déploiement (Epic 7)
-- [x] T7.1 Manifest PWA + service worker (cache minimal hors-ligne) — US-7.1
-- [x] T7.2 Export des données (CSV/JSON) — US-7.2
-- [ ] T7.3 Déploiement backend sur Render (en cours)
-  (config prête — `render.yaml` — reste à créer le compte Render et suivre `docs/deploiement.md`,
-  action réservée au coach : nécessite un compte sur un service tiers)
-- [ ] T7.4 Déploiement frontend sur Netlify (en cours)
-  (config prête — `netlify.toml` avec redirect SPA — reste à créer le compte Netlify, idem T7.3)
-- [ ] T7.5 Connexion Neon en production + variables d'environnement sécurisées (en cours)
-  (dépend de T7.3/T7.4 — la base Neon existante peut servir telle quelle, voir le guide)
+Voir cahier des charges section 10 : paiement en ligne (Stripe), repas types réutilisables, automatisations de relance, statistiques coach enrichies, suivi d'habitudes simples, espace client complet.
 
-## Phase 8 — V2/V3 (hors scope initial, ne pas commencer avant validation V1)
-- [ ] Historique des versions de programme
-- [ ] Notifications/rappels
-- [ ] Export PDF d'un programme/bilan
-- [ ] Espace client (connexion, saisie autonome)
+Hors périmètre (voir cahier des charges section 10 pour la justification)
 
----
+Application mobile native, connexion biométrique, connexion santé/balance connectée, accès salle sécurisé, mode kiosk, SEO/site vitrine/newsletter, Drive, Vidéothèque VOD, gestion multi-coach, module de comptabilité/facturation.
 
-## État global
-_Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 7 — T7.1/T7.2 terminés (PWA + export). T7.3-T7.5 (déploiement réel)
-**non faits** : nécessitent des comptes Render/Netlify que l'agent Claude Code ne peut pas créer —
-config prête (`render.yaml`, `netlify.toml`) et guide pas-à-pas dans `docs/deploiement.md`, à suivre
-par le coach. **La V1 n'est donc pas encore terminée.**
+État global
 
-**Notes Phase 0 :**
-- Backend : Node/Express (ESM) dans `backend/`, squelette avec route `/health`.
-- Frontend : Vite + React + Tailwind CSS v4 (plugin `@tailwindcss/vite`) dans `frontend/`.
-- Prisma : v6.19.3 (générateur classique `prisma-client-js`), schéma complet dans
-  `backend/prisma/schema.prisma` couvrant toutes les entités de la section 4 du cahier des charges.
-  Migration initiale (`prisma/migrations/20260726153909_init`) générée contre un Postgres local
-  (Docker), puis appliquée avec succès sur la vraie base **Neon** via `prisma migrate deploy` —
-  connexion vérifiée (14 tables + `_prisma_migrations` présentes). `backend/.env` contient
-  désormais le vrai `DATABASE_URL` Neon (non commité, cf. `.gitignore`).
-- Branche : `feature/phase-0`, mergée sur `main` via PR #1.
-
-**Notes Phase 1 :**
-- Auth JWT (bcryptjs + jsonwebtoken) : `POST /api/auth/register`, `POST /api/auth/login`,
-  `GET /api/auth/me`. Middleware `requireAuth` dans `backend/src/middleware/auth.js`. `JWT_SECRET`
-  ajouté à `.env` / `.env.example`.
-- API clients (`backend/src/routes/clients.routes.js`), scopée par coach : CRUD, recherche (`?search=`),
-  filtre archivés (`?archive=true`), indicateur d'inactivité calculé initialement depuis `updatedAt`
-  (`?seuilJours=`, 30 par défaut — **affiné en Phase 5 / T5.2** pour se baser sur la date de la
-  dernière mesure réelle), duplication de profil (`POST /clients/:id/duplicate`, vers un nouveau
-  client ou en écrasant un client existant via `targetClientId`).
-- Frontend : routing `react-router-dom`, `AuthContext` (JWT en `localStorage`), pages
-  login/register/liste clients/formulaire client (une page, nom+objectif seuls obligatoires,
-  grille de disponibilités optionnelle), modale de duplication avec confirmation avant écrasement.
-- Testé de bout en bout (register → login → CRUD → recherche → duplication → archivage) via
-  navigateur piloté (claude-in-chrome) et via API (curl) contre la vraie base Neon ; données de
-  test nettoyées après chaque vérification.
-- Branche : `feature/phase-1`, mergée sur `main` via PR #2.
-
-**Notes Phase 2 :**
-- Modèle de données déjà complet depuis la Phase 0 (`Programme`, `Cycle`, `SemainePlanifiee`,
-  `JourEntrainement`, `ExerciceProgramme`, `TemplateProgramme`), y compris `lienVideo` (T2.7).
-- Algorithme de suggestion de split : fonction pure `suggererSplit()` dans
-  `backend/src/lib/splitSuggestion.js`, 9 tests unitaires (`node --test`), table de correspondance
-  jours dispo/expérience/horaires conforme à la section 3.3 du cahier des charges (horaires
-  irréguliers → toujours full body, quel que soit le nombre de jours).
-- Bibliothèque de splits intégrée (`backend/src/lib/splitTemplates.js`, `GET /api/templates/archetypes`)
-  couvrant les 4 types (full body, half body, PPL, bro split) avec jours + exercices pré-remplis.
-  Bibliothèque de modèles réutilisables entre clients via `TemplateProgramme`
-  (`POST/GET/DELETE /api/templates`, sauvegarde depuis un programme existant).
-- API programme imbriquée sous `/api/clients/:id/programmes` (liste/création) et
-  `/api/programmes/:id` (détail/édition/suppression/duplication), `/api/programmes/:id/cycles`,
-  `/api/cycles/:id`, `/api/semaines/:id` — ownership vérifiée à chaque niveau via
-  `backend/src/lib/ownership.js` (remonte jusqu'à `client.coachId`).
-- Duplication de programme (T2.8) : copie la structure jours/exercices vers un nouveau programme
-  chez un autre client (pas de cycles/semaines dupliqués — la planification temporelle ne se
-  reporte pas automatiquement).
-- Frontend : pages `ProgrammesListPage`, `ProgrammeFormPage` (sélection de split suggéré/archétype/
-  modèle sauvegardé, éditeur de jours/exercices avec lien vidéo, enregistrement en tant que modèle),
-  `ProgrammeCalendarPage` (cycles + grille de semaines avec statut normale/deload/test éditable).
-- Testé de bout en bout (suggestion de split, création depuis archétype, cycles/semaines, changement
-  de statut, duplication vers un autre client, sauvegarde en modèle) via navigateur piloté et API
-  contre la vraie base Neon ; données de test nettoyées après vérification.
-- Branche : `feature/phase-2`, mergée sur `main` via PR #3.
-
-**Notes Phase 3 :**
-- Algorithme nutritionnel (Mifflin-St Jeor) : fonctions pures dans `backend/src/lib/nutrition.js`
-  (`calculerBMR`, `calculerTDEE`, `calculerCaloriesCible`, `calculerMacros`,
-  `calculerObjectifsAuto`), 9 tests unitaires avec valeurs de référence calculées à la main.
-  Protéines à 2,2 g/kg (haut de fourchette), lipides à 1 g/kg, glucides sur le reste des calories.
-- API `objectifs_diete` (`GET/PUT /api/clients/:id/objectif-diete`) : mode `AUTO` (calcule depuis le
-  profil client + objectif calorique choisi, rejette si profil incomplet) ou `MANUEL` (valeurs
-  saisies directement), upsert sur la relation 1-1 `ObjectifDiete`.
-- API `journal_diete` : upsert par date (`PUT /api/clients/:id/journal-diete`, contrainte unique
-  `[clientId, date]` en base) + édition/suppression fine par entrée
-  (`PATCH/DELETE /api/journal-diete/:id`).
-- **Dépendance anticipée sur la Phase 5** (validée avec l'utilisateur) : T3.5 nécessitait un
-  historique de poids, donc une API `mesures` complète a été construite dès cette phase
-  (`GET/POST /api/clients/:id/mesures`, `PATCH/DELETE /api/mesures/:id`) plutôt que d'attendre
-  T5.1. La Phase 5 n'aura plus qu'à construire l'écran dédié (tours de bras/taille/poitrine/cuisse)
-  et les alertes d'inactivité (T5.2).
-- Frontend : page unique `NutritionPage` (objectifs, journal, graphique) — moyennes glissantes
-  7/30 jours et écart vs objectif calculés côté client à partir de la liste du journal ; graphique
-  combiné poids/calories avec Recharts (`ComposedChart`, deux axes Y).
-- Testé de bout en bout (calcul auto vérifié identique aux tests unitaires, mode manuel, moyennes
-  glissantes, ajout de journal et de mesure de poids via navigateur piloté) contre la vraie base
-  Neon ; données de test nettoyées après vérification.
-- Branche : `feature/phase-3`, mergée sur `main` via PR #4.
-
-**Notes Phase 4 :**
-- API séances imbriquée sous `/api/clients/:id/seances` (liste filtrable par `debut`/`fin`/`jourId`,
-  création) et `/api/seances/:id` (détail/édition/suppression) — ownership directe via `client.coachId`
-  (`getOwnedSeance` dans `backend/src/lib/ownership.js`).
-- Pré-remplissage depuis un jour de programme (US-4.1) : `GET /api/clients/:id/jours-entrainement`
-  liste tous les jours de tous les programmes du client (aplati, avec nom du programme parent) ;
-  le frontend copie `chargeCible`/`reps` de chaque exercice comme valeurs de départ, modifiables
-  avant enregistrement. Une séance peut aussi être "libre" (`jourId: null`, exercices saisis à la main).
-- Progression par exercice (US-4.2) : `GET /api/clients/:id/exercices-noms` (liste distincte des noms
-  déjà logués, pour peupler le sélecteur) et `GET /api/clients/:id/progression?exercice=Nom`
-  (points `{date, chargeRealisee, repsRealisees}` triés chronologiquement) — le rapprochement entre
-  séances se fait par égalité stricte du nom d'exercice (texte libre, pas de FK vers
-  `ExerciceProgramme`), donc un nom ressaisi différemment ne sera pas regroupé dans le même graphique.
-- Frontend : `SeancesListPage` (historique, filtrable), `SeanceFormPage` (sélection du jour ou séance
-  libre, édition charge/reps/ressenti/notes par exercice), `ProgressionPage` (graphique Recharts par
-  exercice sélectionné).
-- Testé de bout en bout via navigateur piloté et API contre la vraie base Neon (création depuis un
-  jour de programme, séance libre, édition, suppression, graphique de progression sur 2 séances) ;
-  données de test nettoyées après vérification.
-- Branche : `feature/phase-4`, mergée sur `main` via PR #5.
-
-**Notes Phase 5 :**
-- API mesures déjà posée en Phase 3 (`GET/POST /clients/:id/mesures`, `PATCH/DELETE /mesures/:id`),
-  aucun changement backend requis pour le CRUD lui-même.
-- T5.2 (alerte absence de mesure récente) : l'indicateur d'inactivité de la liste clients
-  (`GET /api/clients`) a été **refait** pour se baser sur la date de la dernière mesure loguée
-  (`mesures` triées desc, `take: 1`) plutôt que sur `updatedAt` du client — champ renommé
-  `joursDepuisDerniereMesure` (`null` si le client n'a jamais été mesuré, badge "Jamais mesuré"
-  distinct du cas "pas de mesure depuis X j"). Seuil toujours configurable via `?seuilJours=`
-  (30 jours par défaut).
-- Frontend : `MesuresPage` (route `/clients/:id/mesures`) — formulaire unique servant à la fois de
-  création et d'édition (bascule via un `editingId`), liste chronologique avec suppression, deux
-  graphiques Recharts séparés (poids en kg ; tours bras/taille/poitrine/cuisse en cm sur un même
-  graphique multi-lignes, unités comparables contrairement à poids vs tours).
-- Testé de bout en bout via navigateur piloté et API contre la vraie base Neon : badge "jamais
-  mesuré", badge "pas de mesure depuis Xj" avec seuil de 30j vérifié (86j → inactif, 2j → actif),
-  ajout/édition de mesure avec tours complets, graphiques vérifiés visuellement. La suppression
-  déclenche une confirmation navigateur (`window.confirm`, cohérent avec le reste de l'app) qui
-  bloque l'automatisation CDP — testée avec succès via API à la place ; comportement UI non
-  re-testé en direct mais code identique au pattern déjà validé ailleurs dans l'app.
-- Branche : `feature/phase-5`, mergée sur `main` via PR #6.
-
-**Notes Phase 6 :**
-- **Changement de schéma découvert en cours de route** : `Cycle` n'avait aucune date de début
-  (seulement `dureeSemaines` et `numeroSemaine` ordinal sur `SemainePlanifiee`), rendant impossible
-  le widget "clients en semaine de deload/test **cette semaine**" du tableau de bord. Ajout de
-  `Cycle.dateDebut` (`DateTime?`, `@default(now())`), migration `add_cycle_date_debut` appliquée sur
-  Neon — décision validée avec l'utilisateur avant implémentation. La vue calendrier de la Phase 2
-  (`ProgrammeCalendarPage`) expose maintenant ce champ (éditable par cycle) et surligne visuellement
-  la semaine "actuelle".
-- Fonctions pures dans `backend/src/lib/dashboard.js` (+ 10 tests unitaires) :
-  `calculerInactivite` (partagée avec `clients.routes.js`, remplace la logique dupliquée de la
-  Phase 5), `semaineActuelleIndex` (numéro de semaine d'un cycle couvrant "maintenant", ou `null`),
-  `debutSemaineCourante` (lundi 00:00 **UTC** — bug de fuseau horaire détecté et corrigé pendant le
-  développement : un calcul en heure locale du serveur aurait fonctionné par coïncidence en dev
-  (Europe/Paris) mais aurait mal classé les séances autour de minuit sur un serveur Render, dont le
-  fuseau par défaut est UTC).
-- `GET /api/dashboard` agrège clients actifs, séances loguées cette semaine, clients à relancer
-  (réutilise `calculerInactivite`), clients en semaine deload/test cette semaine (parcourt
-  programmes → cycles → semaines de chaque client, via `semaineActuelleIndex`).
-- Message pré-rempli (T6.2, US-5.1) : `frontend/src/lib/message.js` (fonction pure
-  `genererMessageRecap`, pas de nouvel endpoint backend — compose le texte à partir des données déjà
-  chargées côté client : dernière séance, dernière mesure, objectif diète). `MessageModal` avec
-  bouton Copier (`navigator.clipboard`) et liens `wa.me`/`sms:` pré-remplis.
-- Frontend : nouvelle page `DashboardPage` devenue la page d'accueil après connexion (`/` redirige
-  vers `/dashboard`), nav ajoutée dans `Layout`.
-- Testé de bout en bout (navigateur + API) contre la vraie base Neon : 3 clients avec historiques de
-  mesures variés, un cycle positionné pour que "aujourd'hui" tombe en semaine de deload — toutes les
-  métriques du tableau de bord vérifiées exactes, semaine "actuelle" correctement surlignée dans le
-  calendrier, message généré et liens WhatsApp/SMS vérifiés (contenu de l'URL inspecté). Le bouton
-  Copier n'a pas pu être vérifié dans l'environnement d'automatisation (API Clipboard sans
-  permission accordée hors interaction utilisateur réelle) — code standard, non retesté autrement.
-- Branche : `feature/phase-6`, mergée sur `main` via PR #7.
-
-**Notes Phase 7 :**
-- **T7.1** : `vite-plugin-pwa` (plutôt qu'un service worker écrit à la main — outil standard et
-  éprouvé de l'écosystème Vite). Cache uniquement le shell de l'app (JS/CSS/HTML) ;
-  `/api/*` est explicitement en `NetworkOnly` dans la config Workbox — jamais de cache pour les
-  données du coach, seulement pour que l'app se charge hors-ligne. Icône `frontend/public/icon.svg`
-  créée pour l'occasion (l'app n'avait qu'un favicon générique issu du scaffold Vite). Testé : build
-  de prod (`npm run preview`), serveur ensuite **coupé**, rechargement de la page → l'app se charge
-  toujours (shell servi depuis le cache par le service worker, confirmé actif via
-  `navigator.serviceWorker.getRegistrations()`).
-- **T7.2** : `GET /api/export/json` (dump complet imbriqué : coach sans le hash de mot de passe,
-  clients, disponibilités, programmes/cycles/semaines/jours/exercices, séances, nutrition, mesures,
-  templates) et `GET /api/export/csv/:entite` (clients, mesures, journal-diete, séances) via une
-  fonction pure `versCSV` (`backend/src/lib/csv.js`, 6 tests unitaires — échappement virgules/
-  guillemets/retours à la ligne, dates en ISO). Téléchargement authentifié géré côté frontend en
-  `fetch` + `Blob` + lien temporaire (un `<a href>` classique n'enverrait pas le token JWT).
-  Vérifié : requêtes réseau 200, contenu JSON/CSV inspecté via curl (notes avec virgule correctement
-  échappées) ; le téléchargement navigateur suit le flux standard mais le fichier final n'a pas pu
-  être localisé dans l'environnement d'automatisation (limite d'outillage, comme `window.confirm`/
-  clipboard précédemment — le code suit le pattern standard).
-- **T7.3-T7.5 non réalisés** : nécessitent la création de comptes Render/Netlify (OAuth navigateur,
-  éventuellement infos de facturation même pour le palier gratuit) — hors de portée d'un agent
-  autonome. Préparé à la place : `render.yaml` (blueprint backend, `buildCommand` inclut
-  `prisma migrate deploy` pour appliquer les migrations à chaque déploiement automatiquement),
-  `netlify.toml` (build frontend + redirect SPA obligatoire pour React Router — sans lui, tout
-  rechargement sur une route comme `/dashboard` renverrait un 404 Netlify), et `docs/deploiement.md`
-  (guide pas-à-pas complet T7.3→T7.5, y compris le nouveau réglage `FRONTEND_URL` pour restreindre
-  le CORS à l'origine Netlify en production plutôt que d'accepter toutes les origines).
-- Petit durcissement de sécurité en cours de route : CORS restreignable via `FRONTEND_URL`
-  (`backend/src/app.js`), documenté dans `.env.example` — reste permissif par défaut en local.
-- Branche : `feature/phase-7`, partie de `main` (post-merge PR #7).
+Mettre à jour cette ligne à chaque session de travail : Dernière phase active : Phase 9.5 — pas encore démarrée. Commencer par T9.5.1 (création du projet Google Cloud, action manuelle du coach) avant de lancer Claude Code sur le reste. Phase 10 (nettoyage + design system + réorganisation) suit ensuite.
