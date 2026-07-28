@@ -76,6 +76,12 @@ export const TYPES_OBJECTIF_CALORIQUE = [
   { value: 'MAINTIEN', label: 'Maintien / remise en forme' },
 ];
 
+export const MODULES_ABONNEMENT = [
+  { value: 'SPORT', label: 'Module Sport' },
+  { value: 'DIETE', label: 'Module Diète' },
+  { value: 'PACK_COMPLET', label: 'Pack Complet' },
+];
+
 function label(options, value) {
   return options.find((o) => o.value === value)?.label || value;
 }
@@ -87,4 +93,5 @@ export const labelHoraireTravail = (v) => label(HORAIRES_TRAVAIL, v);
 export const labelExperience = (v) => label(EXPERIENCES, v);
 export const labelTypeSplit = (v) => label(TYPES_SPLIT, v);
 export const labelStatutSemaine = (v) => label(STATUTS_SEMAINE, v);
+export const labelModuleAbonnement = (v) => label(MODULES_ABONNEMENT, v);
 export const labelStatutProspect = (v) => label(STATUTS_PROSPECT, v);

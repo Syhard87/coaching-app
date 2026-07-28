@@ -8,6 +8,7 @@ const router = Router();
 router.use(requireAuth);
 
 const SEUIL_INACTIVITE_JOURS_DEFAUT = 30;
+const FENETRE_RENOUVELLEMENT_JOURS = 7;
 
 router.get(
   '/',
@@ -77,7 +78,31 @@ router.get(
       },
     });
 
-    res.json({ clientsActifs, seancesCetteSemaine, clientsARelancer, clientsDeloadTest });
+    // Abonnements à renouveler bientôt — cahier des charges section 5 (T10.7).
+    const finFenetre = new Date(maintenant.getTime() + FENETRE_RENOUVELLEMENT_JOURS * 86_400_000);
+    const abonnementsExpirants = await prisma.clientAbonnement.findMany({
+      where: {
+        client: { coachId: req.coachId, archive: false },
+        dateFin: { gte: maintenant, lte: finFenetre },
+      },
+      include: { client: { select: { id: true, nom: true } }, catalogueAbonnement: { select: { module: true } } },
+      orderBy: { dateFin: 'asc' },
+    });
+
+    const abonnementsARenouveler = abonnementsExpirants.map((a) => {
+      const dureeTotaleMs = new Date(a.dateFin).getTime() - new Date(a.dateDebut).getTime();
+      const ecouleMs = maintenant.getTime() - new Date(a.dateDebut).getTime();
+      const pourcentageEcoule = dureeTotaleMs > 0 ? Math.min(100, Math.max(0, Math.round((ecouleMs / dureeTotaleMs) * 100))) : 100;
+      return {
+        clientId: a.client.id,
+        clientNom: a.client.nom,
+        module: a.catalogueAbonnement.module,
+        dateFin: a.dateFin,
+        pourcentageEcoule,
+      };
+    });
+
+    res.json({ clientsActifs, seancesCetteSemaine, clientsARelancer, clientsDeloadTest, abonnementsARenouveler });
   })
 );
 

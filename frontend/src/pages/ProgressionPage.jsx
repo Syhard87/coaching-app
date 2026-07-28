@@ -45,7 +45,7 @@ export function ProgressionPage() {
 
   return (
     <div className="max-w-3xl">
-      <Link to={`/clients/${clientId}/seances`} className="text-sm text-gray-500 hover:underline">
+      <Link to={`/clients/${clientId}/programme`} className="text-sm text-gray-500 hover:underline">
         ← Séances
       </Link>
       <h1 className="mb-6 mt-2 text-xl font-medium text-gray-900">Progression par exercice</h1>

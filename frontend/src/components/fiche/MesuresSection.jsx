@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
 import {
   CartesianGrid,
   Legend,
@@ -10,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { clientsApi, mesuresApi } from '../lib/api';
+import { clientsApi, mesuresApi } from '../../lib/api';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -18,9 +17,8 @@ function todayISO() {
 
 const EMPTY_FORM = { date: todayISO(), poids: '', bras: '', taille: '', poitrine: '', cuisse: '', notes: '' };
 
-export function MesuresPage() {
-  const { clientId } = useParams();
-  const [client, setClient] = useState(null);
+// Mesures corporelles — fusionnées dans l'onglet Bilan (T10.4), anciennement page dédiée.
+export function MesuresSection({ clientId }) {
   const [mesures, setMesures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,11 +29,9 @@ export function MesuresPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    Promise.all([clientsApi.get(clientId), clientsApi.listMesures(clientId)])
-      .then(([client, mesures]) => {
-        setClient(client);
-        setMesures(mesures);
-      })
+    clientsApi
+      .listMesures(clientId)
+      .then(setMesures)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [clientId]);
@@ -108,35 +104,23 @@ export function MesuresPage() {
     load();
   }
 
-  if (loading) return <p className="text-sm text-gray-500">Chargement…</p>;
+  if (loading) return <p className="text-sm text-graphite-500">Chargement…</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   return (
-    <div className="max-w-4xl space-y-8">
-      <div>
-        <Link to="/clients" className="text-sm text-gray-500 hover:underline">
-          ← Clients
-        </Link>
-        <h1 className="mb-1 mt-2 text-xl font-medium text-gray-900">Mesures — {client.nom}</h1>
-        {client.inactif && (
-          <p className="text-sm text-amber-700">
-            {client.joursDepuisDerniereMesure == null
-              ? 'Ce client n’a jamais été mesuré.'
-              : `Dernière mesure il y a ${client.joursDepuisDerniereMesure} jours.`}
-          </p>
-        )}
-      </div>
+    <div className="space-y-6">
+      <h2 className="font-heading text-lg font-medium text-graphite-900">Mesures corporelles</h2>
 
-      <form onSubmit={handleSubmit} className="rounded border border-gray-200 bg-white p-4">
+      <form onSubmit={handleSubmit} className="rounded border border-chalk-200 bg-white p-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div>
-            <label className="block text-xs text-gray-600">Date</label>
+            <label className="block text-xs text-graphite-600">Date</label>
             <input
               type="date"
               disabled={Boolean(editingId)}
               value={form.date}
               onChange={(e) => setField('date', e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm disabled:bg-gray-100"
+              className="mt-1 w-full rounded border border-chalk-300 px-2 py-1.5 text-sm disabled:bg-chalk-100"
             />
           </div>
           <NumberField label="Poids (kg)" value={form.poids} onChange={(v) => setField('poids', v)} step="0.1" />
@@ -150,11 +134,11 @@ export function MesuresPage() {
           />
           <NumberField label="Cuisse (cm)" value={form.cuisse} onChange={(v) => setField('cuisse', v)} step="0.1" />
           <div className="col-span-2 sm:col-span-2">
-            <label className="block text-xs text-gray-600">Notes</label>
+            <label className="block text-xs text-graphite-600">Notes</label>
             <input
               value={form.notes}
               onChange={(e) => setField('notes', e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded border border-chalk-300 px-2 py-1.5 text-sm"
             />
           </div>
         </div>
@@ -163,7 +147,7 @@ export function MesuresPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="rounded bg-graphite-900 px-4 py-2 text-sm font-medium text-white hover:bg-graphite-800 disabled:opacity-50"
           >
             {submitting ? 'Enregistrement…' : editingId ? 'Enregistrer' : '+ Ajouter une mesure'}
           </button>
@@ -171,7 +155,7 @@ export function MesuresPage() {
             <button
               type="button"
               onClick={cancelEdit}
-              className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              className="rounded border border-chalk-300 px-4 py-2 text-sm text-graphite-700 hover:bg-chalk-100"
             >
               Annuler
             </button>
@@ -182,20 +166,20 @@ export function MesuresPage() {
       {mesures.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div className="h-64 rounded border border-gray-200 bg-white p-4">
-              <p className="mb-2 text-sm font-medium text-gray-700">Poids (kg)</p>
+            <div className="h-64 rounded border border-chalk-200 bg-white p-4">
+              <p className="mb-2 text-sm font-medium text-graphite-700">Poids (kg)</p>
               <ResponsiveContainer width="100%" height="90%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="poids" stroke="#111827" connectNulls />
+                  <Line type="monotone" dataKey="poids" stroke="#1c1f24" connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="h-64 rounded border border-gray-200 bg-white p-4">
-              <p className="mb-2 text-sm font-medium text-gray-700">Tours (cm)</p>
+            <div className="h-64 rounded border border-chalk-200 bg-white p-4">
+              <p className="mb-2 text-sm font-medium text-graphite-700">Tours (cm)</p>
               <ResponsiveContainer width="100%" height="90%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -203,20 +187,20 @@ export function MesuresPage() {
                   <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="bras" name="Bras" stroke="#2563eb" connectNulls />
-                  <Line type="monotone" dataKey="taille" name="Taille" stroke="#16a34a" connectNulls />
-                  <Line type="monotone" dataKey="poitrine" name="Poitrine" stroke="#dc2626" connectNulls />
-                  <Line type="monotone" dataKey="cuisse" name="Cuisse" stroke="#ca8a04" connectNulls />
+                  <Line type="monotone" dataKey="bras" name="Bras" stroke="#4d7488" connectNulls />
+                  <Line type="monotone" dataKey="taille" name="Taille" stroke="#66875c" connectNulls />
+                  <Line type="monotone" dataKey="poitrine" name="Poitrine" stroke="#d95f2b" connectNulls />
+                  <Line type="monotone" dataKey="cuisse" name="Cuisse" stroke="#9a3f1c" connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <ul className="divide-y divide-gray-200 rounded border border-gray-200 bg-white text-sm">
+          <ul className="divide-y divide-chalk-200 rounded border border-chalk-200 bg-white text-sm">
             {mesures.map((m) => (
               <li key={m.id} className="flex items-center justify-between gap-4 px-4 py-2">
-                <span className="text-gray-500">{new Date(m.date).toLocaleDateString('fr-FR')}</span>
-                <span className="flex-1 text-gray-900">
+                <span className="font-mono text-graphite-500">{new Date(m.date).toLocaleDateString('fr-FR')}</span>
+                <span className="flex-1 text-graphite-900">
                   {m.poids != null && `${m.poids} kg`}
                   {m.bras != null && ` · Bras ${m.bras}`}
                   {m.taille != null && ` · Taille ${m.taille}`}
@@ -224,7 +208,7 @@ export function MesuresPage() {
                   {m.cuisse != null && ` · Cuisse ${m.cuisse}`}
                   {m.notes && ` · ${m.notes}`}
                 </span>
-                <button type="button" onClick={() => startEdit(m)} className="text-gray-600 hover:underline">
+                <button type="button" onClick={() => startEdit(m)} className="text-graphite-600 hover:underline">
                   Modifier
                 </button>
                 <button type="button" onClick={() => handleDelete(m.id)} className="text-red-600 hover:underline">
@@ -242,13 +226,13 @@ export function MesuresPage() {
 function NumberField({ label, value, onChange, step }) {
   return (
     <div>
-      <label className="block text-xs text-gray-600">{label}</label>
+      <label className="block text-xs text-graphite-600">{label}</label>
       <input
         type="number"
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+        className="mt-1 w-full rounded border border-chalk-300 px-2 py-1.5 text-sm"
       />
     </div>
   );

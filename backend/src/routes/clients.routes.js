@@ -19,6 +19,8 @@ import { suggererSplit, compterJoursDisponibles } from '../lib/splitSuggestion.j
 import { calculerInactivite } from '../lib/dashboard.js';
 import { createProgrammeForClient, validateJours } from '../lib/programmes.js';
 import { calculerObjectifsAuto } from '../lib/nutrition.js';
+import { calculerDateFin } from '../lib/abonnements.js';
+import { calculerModulesActifs } from '../lib/accesModules.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -557,6 +559,68 @@ router.get(
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     res.json(points);
+  })
+);
+
+// Abonnements par module — cahier des charges section 5 (T10.2/T10.3).
+router.get(
+  '/:id/abonnements',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const abonnements = await prisma.clientAbonnement.findMany({
+      where: { clientId: client.id },
+      include: { catalogueAbonnement: true },
+      orderBy: { dateDebut: 'desc' },
+    });
+    res.json(abonnements);
+  })
+);
+
+router.post(
+  '/:id/abonnements',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { catalogueAbonnementId, dateDebut } = req.body;
+    if (!catalogueAbonnementId) return res.status(400).json({ error: 'catalogueAbonnementId est requis' });
+
+    const catalogueAbonnement = await prisma.catalogueAbonnement.findFirst({
+      where: { id: catalogueAbonnementId, coachId: req.coachId },
+    });
+    if (!catalogueAbonnement) return res.status(404).json({ error: 'Entrée de catalogue introuvable' });
+
+    const debut = dateDebut ? new Date(dateDebut) : new Date();
+    const abonnement = await prisma.clientAbonnement.create({
+      data: {
+        clientId: client.id,
+        catalogueAbonnementId: catalogueAbonnement.id,
+        dateDebut: debut,
+        dateFin: calculerDateFin(debut, catalogueAbonnement.dureeMois),
+      },
+      include: { catalogueAbonnement: true },
+    });
+    res.status(201).json(abonnement);
+  })
+);
+
+router.get(
+  '/:id/modules-actifs',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const abonnements = await prisma.clientAbonnement.findMany({
+      where: { clientId: client.id },
+      include: { catalogueAbonnement: { select: { module: true } } },
+    });
+
+    const modulesActifs = calculerModulesActifs(
+      abonnements.map((a) => ({ module: a.catalogueAbonnement.module, dateFin: a.dateFin }))
+    );
+    res.json(modulesActifs);
   })
 );
 

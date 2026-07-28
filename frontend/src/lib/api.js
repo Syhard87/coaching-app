@@ -100,6 +100,9 @@ export const clientsApi = {
   listMesures: (id) => request('GET', `/clients/${id}/mesures`),
   createMesure: (id, data) => request('POST', `/clients/${id}/mesures`, data),
   listJoursEntrainement: (id) => request('GET', `/clients/${id}/jours-entrainement`),
+  listAbonnements: (id) => request('GET', `/clients/${id}/abonnements`),
+  vendreAbonnement: (id, data) => request('POST', `/clients/${id}/abonnements`, data),
+  getModulesActifs: (id) => request('GET', `/clients/${id}/modules-actifs`),
   listSeances: (id, params = {}) => {
     const qs = new URLSearchParams(
       Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
@@ -176,4 +179,9 @@ export const publicApi = {
 
 export const exercicesApi = {
   gif: (nom) => request('GET', `/exercices/gif?nom=${encodeURIComponent(nom)}`),
+};
+
+export const catalogueAbonnementsApi = {
+  list: () => request('GET', '/catalogue-abonnements'),
+  update: (id, data) => request('PATCH', `/catalogue-abonnements/${id}`, data),
 };

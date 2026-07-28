@@ -97,28 +97,16 @@ export function ClientsListPage() {
               </div>
               <div className="flex shrink-0 gap-2 text-sm">
                 <Link
-                  to={`/clients/${client.id}/programmes`}
+                  to={`/clients/${client.id}/programme`}
                   className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
                 >
-                  Programmes
+                  Programme sportif
                 </Link>
                 <Link
                   to={`/clients/${client.id}/nutrition`}
                   className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
                 >
-                  Nutrition
-                </Link>
-                <Link
-                  to={`/clients/${client.id}/seances`}
-                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
-                >
-                  Séances
-                </Link>
-                <Link
-                  to={`/clients/${client.id}/mesures`}
-                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-100"
-                >
-                  Mesures
+                  Nutritionnel
                 </Link>
                 <button
                   type="button"

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
 import {
   CartesianGrid,
   ComposedChart,
@@ -10,8 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { clientsApi, journalDieteApi } from '../lib/api';
-import { TYPES_OBJECTIF_CALORIQUE } from '../lib/constants';
+import { clientsApi, journalDieteApi } from '../../lib/api';
+import { TYPES_OBJECTIF_CALORIQUE } from '../../lib/constants';
 
 const PROFIL_REQUIS_AUTO = ['sexe', 'age', 'tailleCm', 'poidsInitial', 'niveauActivite'];
 
@@ -33,9 +32,8 @@ function moyenneGlissante(entries, jours) {
   };
 }
 
-export function NutritionPage() {
-  const { clientId } = useParams();
-  const [client, setClient] = useState(null);
+// Onglet Nutritionnel (T10.4) — anciennement page dédiée, inchangé fonctionnellement.
+export function NutritionSection({ clientId, client }) {
   const [objectif, setObjectif] = useState(null);
   const [journal, setJournal] = useState([]);
   const [mesures, setMesures] = useState([]);
@@ -45,13 +43,11 @@ export function NutritionPage() {
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      clientsApi.get(clientId),
       clientsApi.getObjectifDiete(clientId),
       clientsApi.listJournalDiete(clientId),
       clientsApi.listMesures(clientId),
     ])
-      .then(([client, objectif, journal, mesures]) => {
-        setClient(client);
+      .then(([objectif, journal, mesures]) => {
         setObjectif(objectif);
         setJournal(journal);
         setMesures(mesures);
@@ -62,18 +58,11 @@ export function NutritionPage() {
 
   useEffect(load, [load]);
 
-  if (loading) return <p className="text-sm text-gray-500">Chargement…</p>;
+  if (loading) return <p className="text-sm text-graphite-500">Chargement…</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
 
   return (
-    <div className="max-w-4xl space-y-10">
-      <div>
-        <Link to="/clients" className="text-sm text-gray-500 hover:underline">
-          ← Clients
-        </Link>
-        <h1 className="mb-1 mt-2 text-xl font-medium text-gray-900">Nutrition — {client.nom}</h1>
-      </div>
-
+    <div className="space-y-10">
       <ObjectifSection client={client} objectif={objectif} onSaved={load} />
       <JournalSection clientId={clientId} objectif={objectif} journal={journal} onChange={load} />
       <GraphiqueSection journal={journal} mesures={mesures} clientId={clientId} onMesureAdded={load} />
@@ -126,21 +115,19 @@ function ObjectifSection({ client, objectif, onSaved }) {
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-medium text-gray-900">Objectifs nutritionnels</h2>
+      <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Objectifs nutritionnels</h2>
 
       {objectif && (
-        <div className="mb-4 grid grid-cols-2 gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 rounded border border-chalk-200 bg-white p-4 sm:grid-cols-4">
           <Stat label="Calories cible" value={`${objectif.caloriesCible} kcal`} />
           <Stat label="Protéines" value={`${objectif.proteinesCible} g`} />
           <Stat label="Glucides" value={`${objectif.glucidesCible} g`} />
           <Stat label="Lipides" value={`${objectif.lipidesCible} g`} />
-          {objectif.tdeeCalcule && (
-            <Stat label="TDEE calculé" value={`${objectif.tdeeCalcule} kcal`} />
-          )}
+          {objectif.tdeeCalcule && <Stat label="TDEE calculé" value={`${objectif.tdeeCalcule} kcal`} />}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="rounded border border-gray-200 bg-white p-4">
+      <form onSubmit={handleSubmit} className="rounded border border-chalk-200 bg-white p-4">
         <div className="mb-3 flex gap-4 text-sm">
           <label className="flex items-center gap-1.5">
             <input type="radio" checked={methode === 'AUTO'} onChange={() => setMethode('AUTO')} />
@@ -155,7 +142,7 @@ function ObjectifSection({ client, objectif, onSaved }) {
         {methode === 'AUTO' && (
           <div>
             {champsManquants.length > 0 && (
-              <p className="mb-2 text-sm text-amber-700">
+              <p className="mb-2 text-sm text-accent-700">
                 Profil client incomplet pour le calcul automatique — champs manquants :{' '}
                 {champsManquants.join(', ')}.
               </p>
@@ -163,7 +150,7 @@ function ObjectifSection({ client, objectif, onSaved }) {
             <select
               value={typeObjectifCalorique}
               onChange={(e) => setTypeObjectifCalorique(e.target.value)}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm sm:w-96"
+              className="w-full rounded border border-chalk-300 px-3 py-2 text-sm sm:w-96"
             >
               <option value="">— Choisir un objectif calorique —</option>
               {TYPES_OBJECTIF_CALORIQUE.map((o) => (
@@ -205,7 +192,7 @@ function ObjectifSection({ client, objectif, onSaved }) {
         <button
           type="submit"
           disabled={submitting || (methode === 'AUTO' && champsManquants.length > 0)}
-          className="mt-3 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="mt-3 rounded bg-graphite-900 px-4 py-2 text-sm font-medium text-white hover:bg-graphite-800 disabled:opacity-50"
         >
           {submitting ? 'Enregistrement…' : 'Enregistrer les objectifs'}
         </button>
@@ -267,22 +254,22 @@ function JournalSection({ clientId, objectif, journal, onChange }) {
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-medium text-gray-900">Journal alimentaire</h2>
+      <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Journal alimentaire</h2>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <MoyenneCard titre="Moyenne 7 jours" moyenne={moy7} objectif={objectif} />
         <MoyenneCard titre="Moyenne 30 jours" moyenne={moy30} objectif={objectif} />
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-4 rounded border border-gray-200 bg-white p-4">
+      <form onSubmit={handleSubmit} className="mb-4 rounded border border-chalk-200 bg-white p-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600">Date</label>
+            <label className="block text-xs text-graphite-600">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded border border-chalk-300 px-2 py-1.5 text-sm"
             />
           </div>
           <NumberField label="Calories" value={calories} onChange={setCalories} compact />
@@ -293,11 +280,11 @@ function JournalSection({ clientId, objectif, journal, onChange }) {
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <NumberField label="Eau (L)" value={eau} onChange={setEau} step="0.1" compact />
           <div className="sm:col-span-2">
-            <label className="block text-xs text-gray-600">Repas / notes</label>
+            <label className="block text-xs text-graphite-600">Repas / notes</label>
             <input
               value={repas}
               onChange={(e) => setRepas(e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded border border-chalk-300 px-2 py-1.5 text-sm"
             />
           </div>
         </div>
@@ -307,18 +294,18 @@ function JournalSection({ clientId, objectif, journal, onChange }) {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-3 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+          className="mt-3 rounded bg-graphite-900 px-4 py-2 text-sm font-medium text-white hover:bg-graphite-800 disabled:opacity-50"
         >
           {submitting ? 'Enregistrement…' : 'Enregistrer le jour'}
         </button>
       </form>
 
       {journal.length > 0 && (
-        <ul className="divide-y divide-gray-200 rounded border border-gray-200 bg-white text-sm">
+        <ul className="divide-y divide-chalk-200 rounded border border-chalk-200 bg-white text-sm">
           {journal.slice(0, 14).map((e) => (
             <li key={e.id} className="flex items-center justify-between gap-4 px-4 py-2">
-              <span className="text-gray-500">{new Date(e.date).toLocaleDateString('fr-FR')}</span>
-              <span className="flex-1 text-gray-900">
+              <span className="font-mono text-graphite-500">{new Date(e.date).toLocaleDateString('fr-FR')}</span>
+              <span className="flex-1 text-graphite-900">
                 {e.calories ?? '–'} kcal · P{e.proteines ?? '–'} G{e.glucides ?? '–'} L{e.lipides ?? '–'}
               </span>
               <button type="button" onClick={() => handleDelete(e.id)} className="text-red-600 hover:underline">
@@ -373,16 +360,19 @@ function GraphiqueSection({ journal, mesures, clientId, onMesureAdded }) {
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-medium text-gray-900">Poids & calories</h2>
+      <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Poids & calories</h2>
 
-      <form onSubmit={handleAddPoids} className="mb-4 flex flex-wrap items-end gap-3 rounded border border-dashed border-gray-300 p-4">
+      <form
+        onSubmit={handleAddPoids}
+        className="mb-4 flex flex-wrap items-end gap-3 rounded border border-dashed border-chalk-300 p-4"
+      >
         <div>
-          <label className="block text-xs text-gray-600">Date</label>
+          <label className="block text-xs text-graphite-600">Date</label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
+            className="mt-1 rounded border border-chalk-300 px-2 py-1.5 text-sm"
           />
         </div>
         <NumberField label="Poids (kg)" value={poids} onChange={setPoids} step="0.1" compact />
@@ -390,16 +380,16 @@ function GraphiqueSection({ journal, mesures, clientId, onMesureAdded }) {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+          className="rounded border border-chalk-300 px-4 py-2 text-sm text-graphite-700 hover:bg-chalk-100 disabled:opacity-50"
         >
           {submitting ? 'Ajout…' : '+ Ajouter une mesure de poids'}
         </button>
       </form>
 
       {data.length === 0 ? (
-        <p className="text-sm text-gray-500">Pas encore de données à afficher.</p>
+        <p className="text-sm text-graphite-500">Pas encore de données à afficher.</p>
       ) : (
-        <div className="h-80 rounded border border-gray-200 bg-white p-4">
+        <div className="h-80 rounded border border-chalk-200 bg-white p-4">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -408,20 +398,13 @@ function GraphiqueSection({ journal, mesures, clientId, onMesureAdded }) {
               <YAxis yAxisId="calories" orientation="right" tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
-              <Line
-                yAxisId="poids"
-                type="monotone"
-                dataKey="poids"
-                name="Poids (kg)"
-                stroke="#111827"
-                connectNulls
-              />
+              <Line yAxisId="poids" type="monotone" dataKey="poids" name="Poids (kg)" stroke="#1c1f24" connectNulls />
               <Line
                 yAxisId="calories"
                 type="monotone"
                 dataKey="calories"
                 name="Calories (kcal)"
-                stroke="#9ca3af"
+                stroke="#9aa0a9"
                 connectNulls
               />
             </ComposedChart>
@@ -435,8 +418,8 @@ function GraphiqueSection({ journal, mesures, clientId, onMesureAdded }) {
 function Stat({ label, value }) {
   return (
     <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-base font-medium text-gray-900">{value}</p>
+      <p className="text-xs text-graphite-500">{label}</p>
+      <p className="font-mono text-base font-medium text-graphite-900">{value}</p>
     </div>
   );
 }
@@ -444,13 +427,13 @@ function Stat({ label, value }) {
 function NumberField({ label, value, onChange, step, compact }) {
   return (
     <div>
-      <label className="block text-xs text-gray-600">{label}</label>
+      <label className="block text-xs text-graphite-600">{label}</label>
       <input
         type="number"
         step={step}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`mt-1 rounded border border-gray-300 px-2 py-1.5 text-sm ${compact ? 'w-24' : 'w-full'}`}
+        className={`mt-1 rounded border border-chalk-300 px-2 py-1.5 text-sm ${compact ? 'w-24' : 'w-full'}`}
       />
     </div>
   );
@@ -458,16 +441,16 @@ function NumberField({ label, value, onChange, step, compact }) {
 
 function MoyenneCard({ titre, moyenne, objectif }) {
   return (
-    <div className="rounded border border-gray-200 bg-white p-4">
-      <p className="mb-2 text-sm font-medium text-gray-700">{titre}</p>
+    <div className="rounded border border-chalk-200 bg-white p-4">
+      <p className="mb-2 text-sm font-medium text-graphite-700">{titre}</p>
       {!moyenne ? (
-        <p className="text-sm text-gray-500">Pas de données sur cette période.</p>
+        <p className="text-sm text-graphite-500">Pas de données sur cette période.</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 text-sm">
           <p>
             Calories : <strong>{moyenne.calories}</strong> kcal
             {objectif?.caloriesCible && (
-              <span className={moyenne.calories > objectif.caloriesCible ? 'text-red-600' : 'text-green-600'}>
+              <span className={moyenne.calories > objectif.caloriesCible ? 'text-red-600' : 'text-moss-600'}>
                 {' '}
                 ({moyenne.calories > objectif.caloriesCible ? '+' : ''}
                 {moyenne.calories - objectif.caloriesCible})
@@ -483,7 +466,7 @@ function MoyenneCard({ titre, moyenne, objectif }) {
           <p>
             Lipides : <strong>{moyenne.lipides}</strong> g
           </p>
-          <p className="col-span-2 text-xs text-gray-500">Basé sur {moyenne.nbJours} jour(s) loggé(s)</p>
+          <p className="col-span-2 text-xs text-graphite-500">Basé sur {moyenne.nbJours} jour(s) loggé(s)</p>
         </div>
       )}
     </div>
