@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { construireUrlConsentement, echangerCodeContreProfil } from '../lib/googleAuth.js';
+import { slugify, estSlugValide } from '../lib/slug.js';
 
 const router = Router();
 
@@ -13,7 +14,20 @@ function signToken(coach) {
 }
 
 function toPublicCoach(coach) {
-  return { id: coach.id, nom: coach.nom, email: coach.email, avatarUrl: coach.avatarUrl };
+  return { id: coach.id, nom: coach.nom, email: coach.email, avatarUrl: coach.avatarUrl, slug: coach.slug };
+}
+
+// Génère un slug disponible à partir du nom, en ajoutant un suffixe numérique en cas de collision —
+// cahier des charges section 3.10.
+async function genererSlugDisponible(nom) {
+  const base = slugify(nom) || 'coach';
+  let slug = base;
+  let suffixe = 2;
+  while (await prisma.coach.findUnique({ where: { slug } })) {
+    slug = `${base}-${suffixe}`;
+    suffixe += 1;
+  }
+  return slug;
 }
 
 function googleRedirectUri() {
@@ -69,8 +83,9 @@ router.get(
           data: { googleId: profil.googleId, avatarUrl: profil.avatarUrl },
         });
       } else {
+        const slug = await genererSlugDisponible(profil.nom);
         coach = await prisma.coach.create({
-          data: { nom: profil.nom, email: profil.email, googleId: profil.googleId, avatarUrl: profil.avatarUrl },
+          data: { nom: profil.nom, email: profil.email, googleId: profil.googleId, avatarUrl: profil.avatarUrl, slug },
         });
       }
     }
@@ -88,6 +103,29 @@ router.get(
     if (!coach) {
       return res.status(404).json({ error: 'Coach introuvable' });
     }
+    res.json({ coach: toPublicCoach(coach) });
+  })
+);
+
+// Modification du slug public depuis le profil (US-8.1) — le nom reste dérivé, mais le coach
+// peut personnaliser l'URL de sa page de prospection.
+router.patch(
+  '/me',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { slug } = req.body;
+    if (!slug || !estSlugValide(slug)) {
+      return res.status(400).json({
+        error: 'slug requis : lettres minuscules, chiffres et tirets uniquement (ex. jean-dupont)',
+      });
+    }
+
+    const existing = await prisma.coach.findUnique({ where: { slug } });
+    if (existing && existing.id !== req.coachId) {
+      return res.status(409).json({ error: 'Ce slug est déjà utilisé par un autre coach' });
+    }
+
+    const coach = await prisma.coach.update({ where: { id: req.coachId }, data: { slug } });
     res.json({ coach: toPublicCoach(coach) });
   })
 );

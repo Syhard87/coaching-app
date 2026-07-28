@@ -12,6 +12,9 @@ import mesuresRoutes from './routes/mesures.routes.js';
 import seancesRoutes from './routes/seances.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import exportRoutes from './routes/export.routes.js';
+import prospectsRoutes from './routes/prospects.routes.js';
+import publicRoutes from './routes/public.routes.js';
+import exercicesRoutes from './routes/exercices.routes.js';
 
 const app = express();
 
@@ -38,6 +41,9 @@ app.use('/api/mesures', mesuresRoutes);
 app.use('/api/seances', seancesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/prospects', prospectsRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/exercices', exercicesRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

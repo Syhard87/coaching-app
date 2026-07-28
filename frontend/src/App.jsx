@@ -16,6 +16,8 @@ import { ProgressionPage } from './pages/ProgressionPage';
 import { MesuresPage } from './pages/MesuresPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ExportPage } from './pages/ExportPage';
+import { ProspectsPage } from './pages/ProspectsPage';
+import { PublicProspectPage } from './pages/PublicProspectPage';
 
 function App() {
   return (
@@ -24,12 +26,14 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/p/:slug" element={<PublicProspectPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/clients" element={<ClientsListPage />} />
+              <Route path="/prospects" element={<ProspectsPage />} />
               <Route path="/clients/new" element={<ClientFormPage />} />
               <Route path="/clients/:id" element={<ClientFormPage />} />
               <Route path="/clients/:clientId/programmes" element={<ProgrammesListPage />} />

@@ -61,6 +61,13 @@ export const STATUTS_SEMAINE = [
   { value: 'TEST', label: 'Test' },
 ];
 
+export const STATUTS_PROSPECT = [
+  { value: 'NOUVEAU', label: 'Nouveau' },
+  { value: 'CONTACTE', label: 'Contacté' },
+  { value: 'CONVERTI', label: 'Converti' },
+  { value: 'PERDU', label: 'Perdu' },
+];
+
 export const TYPES_OBJECTIF_CALORIQUE = [
   { value: 'DEFICIT_LEGER', label: 'Perte de poids — déficit léger (−250 kcal/j)' },
   { value: 'DEFICIT_MODERE', label: 'Perte de poids — déficit modéré (−500 kcal/j)' },
@@ -80,3 +87,4 @@ export const labelHoraireTravail = (v) => label(HORAIRES_TRAVAIL, v);
 export const labelExperience = (v) => label(EXPERIENCES, v);
 export const labelTypeSplit = (v) => label(TYPES_SPLIT, v);
 export const labelStatutSemaine = (v) => label(STATUTS_SEMAINE, v);
+export const labelStatutProspect = (v) => label(STATUTS_PROSPECT, v);

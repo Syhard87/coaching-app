@@ -32,8 +32,14 @@ export function AuthProvider({ children }) {
     setCoach(null);
   }, []);
 
+  // Modification du slug public (US-8.1) : met à jour le coach en mémoire sans recharger la page.
+  const updateSlug = useCallback(async (slug) => {
+    const { coach } = await authApi.updateSlug(slug);
+    setCoach(coach);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ coach, loading, loginWithToken, logout }}>
+    <AuthContext.Provider value={{ coach, loading, loginWithToken, logout, updateSlug }}>
       {children}
     </AuthContext.Provider>
   );
