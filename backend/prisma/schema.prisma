@@ -105,7 +105,12 @@ model Coach {
   id             String   @id @default(cuid())
   nom            String
   email          String   @unique
-  motDePasseHash String
+  // Authentification email/mot de passe remplacée par Google OAuth2 (cahier des charges
+  // section 7 / Phase 9.5) : plus obligatoire, conservé nullable pour ne pas perdre les
+  // comptes créés avant la migration.
+  motDePasseHash String?
+  googleId       String?  @unique
+  avatarUrl      String?
   // Slug public utilisé par la page de prospection sans authentification (/p/:slug) —
   // dérivé du nom à la création, modifiable ensuite dans le profil. Cahier des charges section 3.10.
   slug           String   @unique

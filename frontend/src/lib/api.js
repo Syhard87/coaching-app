@@ -1,4 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// Démarre le flux OAuth2 Google (redirection complète, pas un appel fetch) — voir
+// backend/src/routes/auth.routes.js et cahier des charges section 7 / Phase 9.5.
+export const googleLoginUrl = `${BASE_URL}/auth/google`;
 const TOKEN_KEY = 'coaching_app_token';
 
 export function getToken() {
@@ -65,8 +69,6 @@ export const exportApi = {
 };
 
 export const authApi = {
-  register: (nom, email, password) => request('POST', '/auth/register', { nom, email, password }),
-  login: (email, password) => request('POST', '/auth/login', { email, password }),
   me: () => request('GET', '/auth/me'),
   updateSlug: (slug) => request('PATCH', '/auth/me', { slug }),
 };

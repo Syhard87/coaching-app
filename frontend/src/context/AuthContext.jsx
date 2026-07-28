@@ -19,15 +19,11 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const { token, coach } = await authApi.login(email, password);
+  // Reçoit le JWT émis par le backend à la fin du flux Google OAuth (redirection
+  // /auth/callback#token=...), puis récupère le profil coach associé.
+  const loginWithToken = useCallback(async (token) => {
     setToken(token);
-    setCoach(coach);
-  }, []);
-
-  const register = useCallback(async (nom, email, password) => {
-    const { token, coach } = await authApi.register(nom, email, password);
-    setToken(token);
+    const { coach } = await authApi.me();
     setCoach(coach);
   }, []);
 
@@ -43,7 +39,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ coach, loading, login, register, logout, updateSlug }}>
+    <AuthContext.Provider value={{ coach, loading, loginWithToken, logout, updateSlug }}>
       {children}
     </AuthContext.Provider>
   );

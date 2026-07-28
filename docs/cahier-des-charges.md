@@ -1,337 +1,192 @@
-# Cahier des charges — Application de suivi coaching sportif
-Version production (Claude Code)
+# Dossier de conception — Application de suivi coaching sportif
+Version définitive — architecture, périmètre et roadmap
 
 ## 1. Contexte et objectifs
 
-Un coach sportif indépendant a besoin d'un outil pour gérer plusieurs clients en simultané :
-profils, programmes d'entraînement personnalisés, planification dans le temps, suivi réel des séances,
-suivi nutritionnel (avec calcul automatique des besoins caloriques) et suivi des mesures corporelles.
+Un coach sportif indépendant, en visio, démarre son activité. Il vend deux modules distincts (Sport,
+Diète), chacun en abonnement, plus un pack combiné. L'application doit "penser comme un coach" : capturer
+un bilan une fois, puis en déduire automatiquement les bases du programme et de la nutrition — exactement
+le déroulé logique d'un vrai accompagnement.
 
-Un prototype fonctionnel existe déjà sous forme d'artefact Claude (HTML/CSS/JS autonome, stockage clé-valeur).
-Ce document définit ce qu'il faudrait construire pour en faire une **vraie application** complète : accessible
-depuis plusieurs appareils, avec une base de données réelle, des algorithmes de calcul nutritionnel, une
-planification pluri-hebdomadaire des programmes, et des types de séances adaptés au profil et aux contraintes
-de chaque client.
-
-**Objectif de cette phase :** servir de brief complet à Claude Code pour développer l'application de façon
-structurée, plutôt que d'improviser fonctionnalité par fonctionnalité.
+**Ce document est benchmarké** contre une plateforme de coaching mature existante (fonctionnalités type
+gestion clients/prospects, programmes, nutrition, suivi, planning, paiements, acquisition), avec un tri
+explicite : adopter ce qui a de la valeur pour un coach solo débutant en 100% visio, différer ce qui est
+utile mais non prioritaire, écarter ce qui est pensé pour un tout autre profil (studio physique, équipe,
+gros volume). Ce tri est documenté en section 11 pour ne plus avoir à être rediscuté.
 
 ## 2. Utilisateurs
+- **Coach** (principal) : crée les clients, remplit le bilan, construit/valide programmes et plans, gère
+  planning et abonnements.
+- **Client** (accès progressif, voir phasage) : consulte son programme, réserve ses séances, suit sa
+  progression.
 
-- **Utilisateur principal :** le coach — gère ses clients, construit les programmes, consulte les suivis.
-- **Utilisateur secondaire (optionnel, phase 2) :** le client final — pourrait avoir un accès en lecture seule
-  à son propre programme et à son historique, et pourrait saisir lui-même ses mesures/séances/repas.
+## 3. Parcours — la fiche client à 3 onglets
 
-## 3. Fonctionnalités
+Chaque client a exactement 3 onglets : **Bilan** (toujours accessible, rempli une fois, nourrit les deux
+autres), **Programme sportif** et **Nutritionnel** (visibles si l'abonnement correspondant est actif,
+sinon état "non souscrit" avec invitation à vendre — jamais masqué ni vide sans explication).
 
-### 3.1 Gestion des clients — profil étendu
-- Créer / modifier / archiver une fiche client
-- Champs d'identité et de santé : nom, âge, sexe, taille (cm), poids initial (kg), objectif (prise de masse /
-  perte de poids / remise en forme / performance), date de début, notes santé, indicateur "suivi médical en
-  cours"
-- Champs pour l'adaptation du programme :
-  - **Niveau d'activité générale** (sédentaire, légèrement actif, modérément actif, très actif) — utilisé
-    dans le calcul des besoins caloriques
-  - **Profession et horaires de travail** (ex. horaires de bureau, travail posté/3x8, horaires irréguliers)
-  - **Disponibilités hebdomadaires** : jours de la semaine + créneaux (matin / midi / soir / indisponible),
-    saisis une fois et réutilisés pour construire un programme réaliste
-  - **Expérience sportive** (débutant / intermédiaire / confirmé)
-- Recherche et filtre dans la liste de clients
+## 4. Détail des 3 onglets
 
-### 3.2 Calcul automatique des besoins nutritionnels
-L'application calcule une proposition de base, que le coach peut toujours ajuster manuellement — l'algorithme
-assiste la décision, il ne la remplace pas.
+### 4.1 Onglet Bilan
+- Identité : nom, âge, sexe, taille (cm), poids actuel (kg)
+- Objectif principal + **objectifs structurés** (nouveau) : description, valeur cible, échéance, statut —
+  ex. "atteindre 65kg" échéance "3 mois", suivi visuellement sur la fiche
+- Niveau d'activité générale, profession/horaires, disponibilités hebdomadaires, expérience sportive
+- Notes santé + case "suivi médical en cours" (déclenche le rappel non bloquant, voir 8)
+- **Photos de progression** (nouveau) : ajout périodique, associées à une date, consultables en frise
+  chronologique à côté des mesures
 
-**Étape 1 — Métabolisme de base (BMR)**, formule de Mifflin-St Jeor (référence actuelle la plus fiable) :
-- Homme : `BMR = 10 × poids(kg) + 6,25 × taille(cm) − 5 × âge + 5`
-- Femme : `BMR = 10 × poids(kg) + 6,25 × taille(cm) − 5 × âge − 161`
+### 4.2 Onglet Programme sportif
+- Suggestion automatique de split (full body / half body / PPL / bro split) selon disponibilités et
+  horaires du Bilan, modifiable
+- Construction du programme (jours, exercices, séries/reps/charge/repos), cycles/semaines
+  (normale/deload/test), bibliothèque de modèles réutilisables
+- Démonstration par exercice : lien vidéo du coach, sinon GIF/photo automatique via base gratuite
+  (`free-exercise-db`, déjà intégré) — jamais d'illustration générée par IA
+- Suivi des séances réelles (pré-remplies depuis le programme), graphique de progression par exercice
+- **Planning & réservation** (nouveau, voir 5) : les séances à venir apparaissent ici, pas seulement
+  l'historique des séances passées
 
-**Étape 2 — Dépense énergétique totale (TDEE)** = BMR × facteur d'activité :
-| Niveau d'activité | Facteur |
-|---|---|
-| Sédentaire | 1,2 |
-| Légèrement actif (1-3 séances/sem.) | 1,375 |
-| Modérément actif (3-5 séances/sem.) | 1,55 |
-| Très actif (6-7 séances/sem.) | 1,725 |
-| Extrêmement actif (sport + métier physique) | 1,9 |
+### 4.3 Onglet Nutritionnel
+Calcul automatique à partir du Bilan — bases scientifiques établies :
+- BMR (Mifflin-St Jeor) → TDEE selon niveau d'activité
+- Choix du coach : déficit léger (−250 kcal/j) ou modéré (−500 kcal/j), surplus léger (+250) ou modéré
+  (+500), ou maintien
+- Macros calculés : protéines 1,6-2,2 g/kg, lipides 0,8-1 g/kg, glucides le reste
+- Plan hebdomadaire = cibles chiffrées jour par jour (V1 : pas de génération de menus concrets)
+- Journal alimentaire (entrées quotidiennes, moyennes glissantes 7/30j, graphique combiné poids/calories)
+- **Repas types réutilisables** (V2, voir 11) : le coach enregistre des repas personnalisés que le client
+  peut réutiliser rapidement dans son journal, sans aller jusqu'à un générateur de menus complet
 
-**Étape 3 — Objectif calorique**, au choix du coach selon le profil du client :
-| Objectif | Ajustement | Usage typique |
-|---|---|---|
-| Perte de poids — déficit léger | TDEE − 250 kcal/j | Perte plus lente (~0,25 kg/sem.), plus durable, adapté aux profils sensibles |
-| Perte de poids — déficit modéré | TDEE − 500 kcal/j | Rythme classique (~0,5 kg/sem.) |
-| Prise de masse — surplus léger | TDEE + 250 kcal/j | Prise "propre", minimise le gain de gras |
-| Prise de masse — surplus modéré | TDEE + 500 kcal/j | Prise plus rapide, notamment pour profils en insuffisance pondérale |
-| Maintien / remise en forme | TDEE ± 0 | Stabilisation, recomposition corporelle |
+Toutes les valeurs calculées restent des propositions modifiables, jamais figées automatiquement.
 
-**Étape 4 — Répartition des macronutriments**, calculée à partir des calories cibles :
-- Protéines : 1,6 à 2,2 g/kg de poids de corps (haut de fourchette conseillé dans les deux objectifs, pour
-  préserver la masse musculaire)
-- Lipides : 0,8 à 1 g/kg
-- Glucides : le reste des calories cibles
+## 5. Socle commun
 
-Le résultat (calories + macros) pré-remplit les objectifs nutritionnels du client (voir 3.5), modifiables à
-tout moment.
+**Prospection** : slug public, page de capture, pipeline (nouveau/contacté/converti/perdu), conversion en
+un clic.
 
-### 3.3 Création de programme — types de séances et personnalisation
-- Un programme est structuré en **jours d'entraînement**, chacun avec une liste d'exercices (nom, séries,
-  reps, charge cible, temps de repos, notes)
-- **Démonstration visuelle de l'exercice** : en complément du lien vidéo existant (saisi librement par le
-  coach), l'application tente une **correspondance automatique** du nom d'exercice avec une base externe
-  d'exercices standards et affiche l'illustration trouvée directement dans le programme. Source retenue :
-  **free-exercise-db** (domaine public, sans clé d'API ni inscription), et non ExerciseDB comme envisagé
-  initialement — ExerciseDB exige soit une clé RapidAPI (quota gratuit très restrictif), soit un
-  auto-hébergement, deux options hors de portée d'un agent autonome. Compromis assumé : free-exercise-db
-  fournit des **photos fixes** (position de départ/fin du mouvement), pas un GIF animé. Si aucune
-  correspondance n'est trouvée (exercice personnalisé/nommé différemment), seul le lien vidéo du coach est
-  affiché s'il existe ; sinon, rien n'est affiché.
-  **Pas d'illustration générée par IA** pour représenter la forme d'un exercice : le risque d'erreur de
-  posture/mouvement représentée est réel, ce qui en ferait une source non fiable pour un usage lié à la
-  sécurité du client (voir principe déjà posé en section 6).
-- **Types de split disponibles**, sélectionnables en un clic (modèles pré-remplis, puis personnalisables) :
-  - **Full body** : tout le corps à chaque séance — adapté aux emplois du temps chargés (2-3 jours/semaine)
-  - **Half body / Upper-Lower** : alternance haut du corps / bas du corps — 4 jours/semaine
-  - **PPL (Push / Pull / Legs)** : poussée, tirage, jambes — 3, 5 ou 6 jours/semaine selon répétition du cycle
-  - **Bro split** : un groupe musculaire par séance (pecs, dos, jambes, épaules, bras) — 5 jours/semaine, profil expérimenté
-- **Suggestion automatique du split** en fonction des disponibilités déclarées par le client (voir 3.1) :
+**Planning & réservation** (nouveau) : le coach définit ses créneaux disponibles (récurrents ou ponctuels),
+le client réserve un créneau depuis son accès (ou le coach réserve pour lui en attendant l'espace client) ;
+les séances à venir s'affichent dans l'onglet Programme sportif, distinctes des séances déjà réalisées.
 
-| Jours disponibles/semaine | Split suggéré par défaut |
-|---|---|
-| 2 jours | Full body |
-| 3 jours | Full body (ou Half body si expérimenté) |
-| 4 jours | Half body (Upper/Lower) |
-| 5 jours | PPL + 2 jours, ou Bro split (selon expérience) |
-| 6 jours | PPL × 2 (cycle complet répété) |
+**Abonnements** : catalogue éditable (module, durée 1/3/6 mois, prix), vente à un client, expiration
+suivie. Grille par défaut :
 
-  La suggestion tient aussi compte des horaires de travail (ex. horaires postés irréguliers → proposer un
-  split flexible type Full body plutôt qu'un PPL strict qui suppose une régularité).
-  Cette suggestion reste modifiable à tout moment par le coach.
-- Bibliothèque de **modèles de programme** réutilisables entre clients (par type de split)
+| Formule | 1 mois | 3 mois | 6 mois |
+|---|---|---|---|
+| Bilan découverte | Gratuit (30 min) | — | — |
+| Module Sport | 50€ | 40€/mois (120€) | 30€/mois (180€) |
+| Module Diète | 50€ | 40€/mois (120€) | 30€/mois (180€) |
+| Pack Complet | 85€ | ~67€/mois (200€) | 50€/mois (300€) |
 
-### 3.4 Planification temporelle — semaines et mois
-- Un programme est découpé en **cycles** (ou "blocs", ex. "Bloc 1 — Hypertrophie, 4 semaines")
-- Chaque cycle contient plusieurs **semaines planifiées**, avec un statut :
-  - Semaine normale
-  - Semaine de **deload** (charge réduite, récupération)
-  - Semaine de **test** (évaluation, 1RM ou séance de référence)
-- **Progression automatique proposée** d'une semaine à l'autre (ex. +2,5 à +5 % de charge), ajustable
-  manuellement séance par séance
-- Vue **calendrier / planning** : le coach voit en un coup d'œil où en est chaque client dans son cycle
-  (semaine 3 sur 8, prochain deload dans 2 semaines, etc.)
-- Possibilité de dupliquer une semaine ou un cycle complet pour l'adapter rapidement à un autre client
+**Mesures corporelles** *(transversal)* : poids, tours, graphiques, alerte d'absence de mesure récente.
 
-### 3.5 Suivi réel des séances
-- Log d'une séance : date, jour de programme concerné (ou séance libre), charge/reps réellement réalisées
-  par exercice, ressenti (RPE), notes
-- Vue de **progression par exercice** dans le temps (graphique charge/reps)
-- Historique complet, filtrable par période, par cycle, par semaine
+**Tableau de bord** : clients actifs, séances de la semaine, relances, deload/test en cours, abonnements à
+expiration, réservations à venir, message pré-rempli WhatsApp/SMS.
 
-### 3.6 Suivi nutritionnel (diète)
-- Objectifs nutritionnels par client : calculés automatiquement (voir 3.2) ou saisis manuellement
-- Journal alimentaire quotidien (calories, macros, eau, notes de repas)
-- Moyennes glissantes (7/30 jours), écart par rapport aux objectifs cibles
-- Graphique d'évolution des calories et du poids en parallèle (pour visualiser la cohérence entre les deux)
+## 6. Modèle de données
 
-### 3.7 Suivi des mesures corporelles
-- Poids, tours de bras/taille/poitrine/cuisse, notes
-- Graphiques d'évolution, mis en regard du cycle d'entraînement en cours
-- Alertes si un client n'a pas de mesure récente (> 30 jours par exemple)
-
-### 3.8 Tableau de bord coach
-- Vue d'ensemble : nombre de clients actifs, séances loguées cette semaine, clients à relancer,
-  clients en semaine de deload/test cette semaine
-- Notifications/rappels (phase 2)
-
-### 3.9 (Phase 2 — optionnel) Espace client
-- Connexion sécurisée pour chaque client
-- Consultation de son programme du jour/de la semaine, saisie de ses propres séances/repas/mesures
-- Notifications de rappel de séance
-
-### 3.10 Prospection — capter les demandes reçues hors app
-Un coach reçoit des demandes de contact hors de l'application (Instagram, bouche-à-oreille, WhatsApp) qu'il
-perd faute d'un endroit pour les centraliser.
-
-- Chaque coach dispose d'un **slug public unique** (dérivé de son nom à la création, modifiable ensuite dans
-  son profil)
-- **Page publique, sans authentification**, accessible via ce slug (ex. `/p/:slug`), avec un formulaire :
-  nom, contact (email ou téléphone), objectif, message libre
-- La soumission du formulaire crée un **Prospect** rattaché au coach correspondant, sans exposer aucune
-  autre donnée du coach ou de ses clients
-- Onglet **"Prospects"** dans le tableau de bord coach : liste des prospects avec un statut modifiable
-  (nouveau / contacté / converti / perdu)
-- Bouton **"Convertir en client"** : crée un client pré-rempli (nom, objectif, message en note) à partir du
-  prospect, en réutilisant la logique de duplication déjà en place (voir US-1.3 / T2.8)
-- Bouton **"Copier le lien à partager"** dans le tableau de bord, pour transmettre facilement l'URL de la
-  page publique du coach
-
-## 4. Modèle de données (structure indicative)
-
-- `coaches` (id, nom, email, mot_de_passe_hash, **slug** [unique])
+- `coaches` (id, nom, email, mot_de_passe_hash, slug)
 - `clients` (id, coach_id, nom, âge, sexe, taille_cm, poids_initial, objectif, date_début, notes_santé,
   suivi_médical, niveau_activité, profession, expérience_sportive)
-- `disponibilites` (id, client_id, jour_semaine, créneau [matin/midi/soir], disponible)
-- `programmes` (id, client_id, nom, type_split, fréquence, version)
-- `cycles` (id, programme_id, nom, ordre, durée_semaines)
-- `semaines_planifiees` (id, cycle_id, numéro_semaine, statut [normale/deload/test], notes)
-- `jours_entrainement` (id, semaine_id ou programme_id, nom, ordre)
-- `exercices_programme` (id, jour_id, nom, séries, reps, charge_cible, repos, notes)
-- `seances` (id, client_id, date, jour_id, ressenti, notes)
-- `exercices_realises` (id, seance_id, nom, charge_réalisée, reps_réalisées, notes)
-- `objectifs_diete` (id, client_id, méthode_calcul [auto/manuel], tdee_calculé, type_objectif_calorique,
-  calories_cible, protéines_cible, glucides_cible, lipides_cible)
-- `journal_diete` (id, client_id, date, calories, protéines, glucides, lipides, eau, repas, notes)
-- `mesures` (id, client_id, date, poids, bras, taille, poitrine, cuisse, notes)
-- `templates_programme` (id, coach_id, nom, type_split, contenu_json)
-- `prospects` (id, coach_id, nom, contact, objectif, message, statut [nouveau/contacté/converti/perdu],
-  date_création, client_id nullable une fois converti)
+- `objectifs_client` (id, client_id, description, valeur_cible, unite, echeance, statut)
+- `photos_progression` (id, client_id, date, reference_fichier, notes)
+- `disponibilites` (id, client_id, jour_semaine, créneau, disponible)
+- `prospects` (id, coach_id, nom, contact, objectif, message, statut, client_id nullable)
+- `catalogue_abonnements` (id, coach_id, module, duree_mois, prix_total, label)
+- `client_abonnements` (id, client_id, catalogue_abonnement_id, date_debut, date_fin, statut)
+- `creneaux_disponibles` (id, coach_id, jour_semaine ou date, heure_debut, heure_fin, recurrent)
+- `reservations` (id, client_id, creneau_id, date_heure, statut [confirmee/annulee/honoree])
+- `programmes`, `cycles`, `semaines_planifiees`, `jours_entrainement`, `exercices_programme` (+ lien_video)
+- `seances`, `exercices_realises`
+- `objectifs_diete`, `journal_diete`, `repas_types` (nouveau, V2)
+- `mesures`, `templates_programme`
 
-## 5. Architecture technique (décisions figées)
+## 7. Architecture technique
 
-| Composant | Choix retenu | Pourquoi |
-|---|---|---|
-| Langage | JavaScript / TypeScript partout | Un seul langage frontend + backend, écosystème le mieux supporté par l'hébergement gratuit, et le plus performant avec Claude Code |
-| Frontend | React + Tailwind | Écosystème mature, composants réutilisables pour les graphiques/formulaires |
-| Backend | Node.js (Express) | S'intègre nativement avec React, léger à héberger gratuitement |
-| Base de données | PostgreSQL hébergé sur **Neon** (palier gratuit permanent) | Gratuit, scale-to-zero sans perte de données, gère bien les relations (clients → programmes → cycles → séances) |
-| ORM | Prisma | Évite d'écrire du SQL à la main, migrations versionnées |
-| Authentification | Email/mot de passe (bcrypt) + sessions ou JWT | Simple à mettre en place pour un usage mono-coach au départ |
-| Hébergement frontend | **Netlify** (gratuit) | Généreux en bande passante, tolérant à l'usage commercial (contrairement à Vercel Hobby) |
-| Hébergement backend | **Render** (gratuit, service web) | Déploiement simple depuis Git, pas de carte bancaire requise |
-| Distribution | **PWA** (Progressive Web App), pas de store | Installable sur l'écran d'accueil iOS/Android, gratuit, sans délai de validation ni frais d'App Store |
-| Graphiques | Recharts | Cohérent avec les visualisations déjà construites dans le prototype |
+React + Tailwind (Netlify) · Node.js/Express (Render) · PostgreSQL/Prisma (Neon) · PWA — inchangé, déjà en
+production.
 
-**Coût mensuel visé : 0 €**, avec un compromis connu et accepté : le backend Render gratuit se met en veille
-après 15 minutes d'inactivité (premier chargement de la journée un peu plus lent, ~30-60s). À réévaluer vers
-un petit forfait payant (5-25 €/mois) si l'app devient un outil quotidien critique.
+**Authentification : migration vers Google OAuth2** (remplace email/mot de passe + JWT). Le coach ouvre un
+projet Google Cloud (gratuit), génère un Client ID/Secret OAuth, et se connecte en un clic — Google porte
+la sécurité des identifiants, plus de hash de mot de passe à gérer côté application. Le compte coach
+existant doit pouvoir se relier à son compte Google sans perte de données (voir Phase 9.5).
 
-**Ce que Claude Code peut faire concrètement :** initialiser le projet (frontend React + backend Node/Express),
-écrire le schéma Prisma et les migrations, implémenter les algorithmes de calcul nutritionnel et de suggestion
-de split (fonctions pures, testables unitairement), développer les routes API, construire les écrans React
-(profil, création de programme avec sélection de split, planning calendaire, journal de séances, diète,
-mesures), configurer le manifest PWA, écrire les tests, et préparer le déploiement sur Netlify/Render/Neon —
-le tout en s'appuyant sur ce cahier des charges comme fil conducteur.
+**Paiement en ligne (V2)** : Stripe Checkout recommandé — aucune donnée de carte ne transite par votre
+serveur (conformité PCI déléguée à Stripe), frais à la transaction plutôt qu'un abonnement fixe, cohérent
+avec le budget accessible visé.
 
-## 6. Contraintes non-fonctionnelles
+## 7.1 Identité visuelle & interactions
 
-- **Données de santé sensibles** : les notes médicales et données nutritionnelles/mesures sont des données
-  personnelles sensibles. Prévoir un chiffrement des données au repos et un accès restreint par authentification
-  dès la V1, même en mono-utilisateur.
-- **Données de prospection** : les données saisies par un prospect (nom, email/téléphone, objectif, message)
-  sont des données personnelles, moins sensibles que les notes santé d'un client mais à protéger avec la
-  même rigueur d'accès : uniquement visibles par le coach auquel le prospect est rattaché, jamais exposées
-  via la page publique de soumission (formulaire en écriture seule côté public).
-- **RGPD (si clients français/UE)** : possibilité pour un client d'obtenir ou de faire supprimer ses données
-  s'il a un accès direct (phase 2).
-- **Les algorithmes sont assistifs, pas prescriptifs** : toute valeur calculée automatiquement (calories,
-  macros, split suggéré, progression de charge) doit rester visible comme *proposition*, modifiable par le
-  coach avant validation — l'application ne doit jamais appliquer une recommandation sans validation humaine.
-- **Sauvegardes régulières** de la base de données.
-- **Responsive** : utilisable aussi bien sur ordinateur qu'en mobilité (le coach est rarement derrière un bureau).
+Direction retenue : prolonger l'identité déjà conçue pour l'outil de suivi personnel du coach, plutôt
+qu'un style Tailwind par défaut sans personnalité. Esprit "carnet d'entraînement" — structuré, discipliné,
+mais chaleureux côté client.
 
-## 7. Phasage proposé
+- **Palette** : graphite/chalk (fond et texte neutres) + orange-fer comme accent principal, bleu-acier et
+  vert-mousse en accents secondaires (objectifs atteints, états positifs) — définie en tokens Tailwind
+  (`tailwind.config`), jamais en couleurs codées en dur dans les composants.
+- **Typographie** : Oswald (titres, condensé, esprit signalétique de salle) + Inter (texte courant) + IBM
+  Plex Mono (valeurs chiffrées — charges, calories, dates) pour distinguer visuellement la donnée du texte.
+- **Interactions** : transitions et micro-retours visuels via Framer Motion (librairie gratuite) —
+  barres de progression animées (objectifs, abonnements), confirmation visuelle sur une action validée,
+  entrée animée des graphiques Recharts, états de survol clairs sur les éléments cliquables.
+- **Cohérence** : cette identité s'applique à l'ensemble de l'app (coach et, plus tard, espace client) —
+  pas un traitement différent par écran.
 
-1. **V1 — Usage mono-coach, cœur de métier complet** : gestion clients (profil étendu), calcul nutritionnel
-   automatique, création de programme avec choix de split et suggestion automatique selon disponibilités,
-   planification en cycles/semaines, suivi réel des séances, journal alimentaire, suivi des mesures — le tout
-   avec une vraie base de données et un déploiement accessible depuis plusieurs appareils.
-2. **V2 — Confort d'usage** : historique des versions de programme, rappels/notifications, export PDF d'un
-   programme ou d'un bilan pour l'envoyer au client.
-3. **V3 — Espace client** : connexion client, saisie autonome, notifications.
+## 8. Contraintes non-fonctionnelles
 
-## 8. User stories & analyse UX
+- Données de santé chiffrées au repos, accès restreint par authentification.
+- **Photos de progression : niveau de protection renforcé.** Une photo du corps d'un client est une donnée
+  au moins aussi sensible qu'une note de santé — accès strictement limité au coach concerné, jamais
+  exposée par une URL publique ou prévisible, suppression possible par le client si un espace lui est
+  ouvert.
+- Algorithmes assistifs, jamais prescriptifs — toute valeur calculée reste modifiable.
+- Rappel de sécurité médicale non bloquant si "suivi médical en cours" est coché.
+- Aucune illustration d'exercice générée par IA.
+- Sauvegardes régulières, RGPD si espace client ouvert.
 
-### Méthodologie
-Pour se mettre à la place d'un coach utilisateur, analyse d'avis et comparatifs professionnels sur les
-plateformes existantes (Trainerize, TrueCoach, PT Distinction, My PT Hub), afin de repérer les frictions
-réelles plutôt que des problèmes hypothétiques.
+## 9. User stories (nouvelles, en plus de l'existant déjà livré)
 
-### Points de friction identifiés sur le marché
-- Coût qui grimpe avec le nombre de clients, modules nutrition/automatisation facturés en supplément
-- Interfaces pensées pour le marché anglophone US/UK, pas d'adaptation française, support lent
-- Absence d'intégration WhatsApp native — canal n°1 des coachs francophones avec leurs clients
-- Chaque plateforme est forte sur un axe (entraînement ou nutrition), rarement homogène sur les deux
-- App à la marque du coach payante en supplément ou indisponible selon la plateforme
-- Bugs/régressions documentés après rachat de certaines plateformes, synchronisations tierces peu fiables
-- Aucune portabilité réelle des données entre plateformes (pas d'export/migration automatisé)
+- US-10.1 — En tant que coach, je veux définir mes créneaux disponibles, afin que la prise de rendez-vous
+  ne se fasse plus par message.
+- US-10.2 — En tant que client (ou coach en son nom), je veux réserver un créneau visible, afin de savoir
+  précisément quand a lieu la prochaine séance.
+- US-10.3 — En tant que coach, je veux ajouter des photos de progression datées à la fiche client, afin de
+  visualiser l'évolution physique dans le temps, en complément des mesures chiffrées.
+- US-10.4 — En tant que coach, je veux fixer un objectif chiffré avec échéance pour un client, afin de
+  suivre concrètement l'atteinte de son objectif plutôt qu'une intention vague.
+- US-11.1 *(V2)* — En tant que coach, je veux encaisser un abonnement en ligne, afin de ne plus gérer les
+  paiements manuellement.
+- US-11.2 *(V2)* — En tant que coach, je veux enregistrer des repas types réutilisables, afin que le
+  client remplisse son journal alimentaire plus rapidement.
 
-### Comment l'application y répond dès la conception
-- Outil personnel, pas de coût par client
-- Conçu en français dès le départ
-- Nutrition et entraînement nativement intégrés (pas un module séparé, voir 3.2 à 3.7)
-- Données hébergées sur une base propre (Neon/PostgreSQL) : export possible à tout moment
+## 10. Roadmap — priorisation explicite pour ne plus revenir dessus
 
-### Epic 1 — Gestion des clients & onboarding
-- **US-1.1** — En tant que coach, je veux créer une fiche client complète en moins de deux minutes, afin de
-  ne pas perdre de temps administratif à l'arrivée d'un nouveau client.
-  *Critère : formulaire en une page, seuls nom + objectif obligatoires à la création.*
-- **US-1.2** — En tant que coach, je veux repérer en un coup d'œil les clients sans mise à jour récente,
-  afin de savoir qui relancer sans ouvrir chaque fiche.
-  *Critère : indicateur visuel si aucune activité depuis un seuil configurable.*
-- **US-1.3** — En tant que coach, je veux dupliquer un profil ou un programme vers un autre client, afin de
-  gagner du temps quand plusieurs clients partagent un objectif proche.
-  *Critère : bouton "dupliquer vers", confirmation avant écrasement.*
+**V1 (déjà en grande partie livré + révision 3 onglets)**
+Bilan/Programme sportif/Nutritionnel, calcul nutritionnel automatique, suggestion de split, GIF
+d'exercices, suivi des séances et mesures, prospection, abonnements par module, tableau de bord.
 
-### Epic 2 — Création de programme & personnalisation
-- **US-2.1** — En tant que coach, je veux choisir un split (full body / half body / PPL / bro split) depuis
-  un modèle, afin de ne pas reconstruire un programme depuis zéro.
-- **US-2.2** — En tant que coach, je veux une suggestion de split basée sur les disponibilités/horaires du
-  client, afin de proposer un programme réaliste (voir 3.3).
-- **US-2.3** — En tant que coach, je veux planifier un programme sur plusieurs semaines avec deload/test
-  intégrés, afin de piloter la progression dans la durée (voir 3.4).
-- **US-2.4** — En tant que coach, je veux attacher un lien vidéo/note à un exercice, afin que le client
-  comprenne le mouvement sans ambiguïté.
-- **US-2.5** — En tant que coach, je veux qu'un GIF de démonstration s'affiche automatiquement pour les
-  exercices standards, afin de ne pas chercher une vidéo à chaque fois (voir 3.3).
+**V1.1 (prochaine itération, socle métier complet)**
+Planning & réservation (créneaux, séances à venir), photos de progression, objectifs client structurés.
 
-### Epic 3 — Suivi nutritionnel
-- **US-3.1** — En tant que coach, je veux des objectifs caloriques/macros calculés automatiquement par
-  client, afin de ne pas refaire le calcul à la main (voir 3.2).
-- **US-3.2** — En tant que coach, je veux voir poids et calories sur un même graphique, afin de vérifier la
-  cohérence entre suivi alimentaire et résultats réels.
+**V2 (une fois plusieurs clients payants stabilisés)**
+Paiement en ligne (Stripe), repas types réutilisables, automatisations de relance, statistiques coach
+enrichies, espace client complet (connexion, réservation autonome, saisie autonome).
 
-### Epic 4 — Suivi des séances & progression
-- **US-4.1** — En tant que coach, je veux logger une séance directement depuis le programme du jour, afin
-  de ne pas ressaisir la liste d'exercices.
-- **US-4.2** — En tant que coach, je veux visualiser la progression de charge par exercice, afin d'ajuster
-  le programme si un client stagne.
+**Hors périmètre de cette application** *(pas un refus définitif — juste pas ce projet-ci)*
+Application mobile native, connexion biométrique, connexion santé/balance connectée, accès salle
+sécurisé, mode kiosk, SEO/pages locales/site vitrine, newsletter — fonctionnalités pensées pour un profil
+de coach différent (studio physique, équipe, gros volume) ou relevant d'un projet marketing séparé, pas de
+l'application de suivi elle-même.
 
-### Epic 5 — Communication coach-client
-- **US-5.1** — En tant que coach, je veux générer un message pré-rempli (résumé séance/mesures) prêt à
-  envoyer par WhatsApp/SMS, afin de rester sur le canal que mes clients utilisent déjà.
-
-### Epic 6 — Tableau de bord
-- **US-6.1** — En tant que coach, je veux un tableau de bord regroupant entraînement, nutrition et mesures,
-  afin d'avoir une vue d'ensemble sans naviguer entre modules cloisonnés (voir 3.8).
-
-### Epic 7 — Accès mobile & fiabilité
-- **US-7.1** — En tant que coach, je veux consulter/modifier une fiche client même en connexion instable
-  (salle de sport), afin de ne pas être bloqué en plein cours.
-- **US-7.2** — En tant que coach, je veux exporter mes données à tout moment, afin de ne jamais dépendre
-  d'un éditeur tiers pour récupérer mon travail.
-
-### Epic 8 — Prospection
-- **US-8.1** — En tant que coach, je veux une page publique où un prospect laisse ses coordonnées et son
-  objectif, afin de ne pas perdre les demandes reçues par message (voir 3.10).
-- **US-8.2** — En tant que coach, je veux un pipeline simple (nouveau/contacté/converti/perdu), afin de ne
-  pas oublier de relancer un prospect intéressé.
-- **US-8.3** — En tant que coach, je veux convertir un prospect en client en un clic, afin de ne pas
-  ressaisir ses informations.
-
-### Priorisation V1
-| Priorité | Epics |
-|---|---|
-| Indispensable | Epic 1, Epic 2, Epic 3, Epic 4 |
-| Fort impact UX | Epic 6, Epic 5 (US-5.1) |
-| Peut attendre la V2 | Epic 7 (offline avancé), reste d'Epic 5 |
-
-## 9. Décisions prises
-
-- **Stack :** React (frontend) + Node.js/Express (backend) — un seul langage, JavaScript/TypeScript.
-- **Hébergement :** Netlify (frontend) + Render (backend) + Neon (base PostgreSQL) — paliers gratuits.
-- **Distribution :** application web (PWA), pas de publication sur App Store / Google Play.
-- **Budget visé :** 0 €/mois pour démarrer, avec passage à un forfait payant si l'usage le justifie plus tard.
-- **Portée V1 :** usage mono-coach (voir phasage section 7), mais avec l'intégralité des fonctionnalités
-  métier (nutrition automatisée, splits personnalisés, planification pluri-hebdomadaire) — l'ouverture à
-  plusieurs coachs n'est pas prévue avant une phase ultérieure.
-
-Ce cahier des charges est prêt à être donné tel quel à Claude Code pour démarrer le développement.
+## 11. Décisions prises
+- Fiche client à 3 onglets, accès conditionné par abonnement.
+- Benchmark concurrentiel effectué et tri assumé (section 10) — les fonctionnalités écartées le sont pour
+  des raisons de pertinence, pas d'oubli.
+- Nutrition V1 = cibles chiffrées ; repas types en V2 ; pas de générateur de menus complet prévu.
+- Photos de progression traitées avec un niveau de confidentialité renforcé, équivalent aux données de
+  santé.
+- Paiement en ligne différé en V2, via Stripe Checkout.
+- Ce document est la référence unique du projet (`docs/cahier-des-charges.md`), remplaçant les versions
+  précédentes.
