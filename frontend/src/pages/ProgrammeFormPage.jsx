@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { clientsApi, programmesApi, templatesApi } from '../lib/api';
 import { TYPES_SPLIT, labelTypeSplit } from '../lib/constants';
+import { ExerciceGifPreview } from '../components/ExerciceGifPreview';
 
 function emptyExercice() {
   return { nom: '', series: 3, reps: '8-12', chargeCible: '', tempsRepos: '', notes: '', lienVideo: '' };
@@ -336,8 +337,11 @@ export function ProgrammeFormPage() {
                       value={exo.lienVideo}
                       onChange={(e) => updateExercice(jourIdx, exoIdx, { lienVideo: e.target.value })}
                       placeholder="Lien vidéo"
-                      className="col-span-3 rounded border border-gray-300 px-2 py-1"
+                      className="col-span-2 rounded border border-gray-300 px-2 py-1"
                     />
+                    <div className="col-span-1 flex items-center justify-center">
+                      <ExerciceGifPreview nom={exo.nom} />
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeExercice(jourIdx, exoIdx)}
