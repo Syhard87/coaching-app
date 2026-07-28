@@ -25,13 +25,12 @@ Tokens Tailwind (palette graphite/chalk + accent orange-fer, Oswald/Inter/IBM Pl
 
 Note de périmètre : l'édition du catalogue (T10.8) couvre le prix ; les durées restent la grille fixe 1/3/6 mois (pas de champ d'édition de durée, pour éviter des lignes de catalogue dégénérées). Testé de bout en bout via navigateur piloté contre Neon (vente, déblocage d'onglet, édition de prix) ; 55 tests backend + build/tests frontend passent.
 
-Phase 11 — Planning & réservation (V1.1)
- T11.1 Modèle creneaux_disponibles + reservations, migration
- T11.2 API : définir des créneaux disponibles (récurrents ou ponctuels)
- T11.3 API : réserver un créneau pour un client (le coach réserve en son nom en attendant un espace client), changement de statut (confirmée/annulée/honorée)
- T11.4 Frontend : page "Planning" coach (définir ses créneaux, vue des réservations)
- T11.5 Frontend : séances à venir affichées dans l'onglet Programme sportif, distinctes de l'historique
- T11.6 Carte "Prochaines réservations" sur le tableau de bord
+Phase 11 — ✅ Terminée (2026-07-28) — Planning & réservation (V1.1)
+
+Modèle `CreneauDisponible` (récurrent ou ponctuel, heureDebut/heureFin en "HH:mm" validées par une fonction pure testée) + `Reservation` (statut confirmée/annulée/honorée), migration appliquée sur Neon. API créneaux (CRUD coach-scopé) et réservations (création avec détection de conflit d'horaire, changement de statut, vue d'ensemble coach). Page Planning (créneaux + réservations, avec Framer Motion pour les transitions de liste et de statut). Onglet Programme sportif de la fiche client : section "Séances à venir" distincte de l'historique des séances. Carte "Prochaines réservations" sur le tableau de bord.
+
+Testé de bout en bout via navigateur piloté contre Neon : création d'un créneau récurrent, réservation d'un client dessus, affichage dans l'onglet Programme sportif et sur le tableau de bord, annulation. 60 tests backend + build/tests/lint frontend passent. Données de test nettoyées après vérification.
+
 Phase 12 — Photos de progression (V1.1)
  T12.1 Modèle photos_progression, migration, stockage avec protection renforcée (voir cahier des charges section 8 — traitement équivalent aux données de santé)
  T12.2 API upload/liste/suppression, scoping strict par coach, jamais d'URL publique prévisible
@@ -50,4 +49,4 @@ Application mobile native, connexion biométrique, connexion santé/balance conn
 
 État global
 
-Mettre à jour cette ligne à chaque session de travail : Phase 10 terminée et testée contre Neon (2026-07-28). Dernière phase active : Phase 11 (Planning & réservation) — pas encore démarrée.
+Mettre à jour cette ligne à chaque session de travail : Phase 11 terminée et testée contre Neon (2026-07-28), committée localement sur feature/phase-11 (non poussée, pas de PR — en attente de validation humaine). Dernière phase active : Phase 12 (Photos de progression) — pas encore démarrée.
