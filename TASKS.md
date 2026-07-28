@@ -17,19 +17,14 @@ Investigation menée avant de démarrer la Phase 10, deux constats distincts :
 - "Formules à l'heure" (ancien Epic 9 abandonné) : confirmé qu'aucun commit lié n'a jamais touché `main` — le seul commit concerné (`91098c6`) vivait sur `feature/phase-10`, écrasé par le pivot final dans cette même branche avant sa suppression ; il ne subsiste qu'à l'état d'objet Git non référencé (`git fsck --unreachable`), sans risque. Branche `feature/phase-10` déjà absente (locale et distante).
 - Anomalie distincte détectée en cours de route : la PR #9 (Phase 9 — Prospection) était restée ouverte et non mergée alors que sa migration (`slug` coach + modèle `Prospect`) avait été appliquée manuellement sur Neon en production, créant un écart entre `main` et la base réelle. Régularisé : PR #9 mergée dans `main`, puis fusionnée dans `feature/phase-9.5` — schéma local et Neon désormais identiques (`prisma migrate status` : up to date), 47 tests backend + build/tests frontend passent après fusion.
 
-Phase 10 — Design system + Réorganisation à 3 onglets + Abonnements par module
+Phase 10 — ✅ Terminée (2026-07-28) — Design system + Réorganisation à 3 onglets + Abonnements par module
 
 Remplace définitivement l'ancien modèle et l'ancien style visuel en une seule fois — pas de refonte graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.1.
 
- T10.0c Mettre en place les tokens Tailwind (couleurs, polices Oswald/Inter/IBM Plex Mono) et installer Framer Motion — base appliquée à tous les écrans reconstruits dans cette phase
- T10.1 Modèle catalogue_abonnements + client_abonnements, migration, catalogue par défaut à la création d'un compte coach (grille : Sport/Diète 50€ 1 mois, 120€ 3 mois, 180€ 6 mois ; Pack Complet 85€/200€/300€)
- T10.2 API : vendre un abonnement à un client, consulter l'état des modules actifs, calcul automatique de la date de fin
- T10.3 Logique d'accès aux modules (fonction pure, testée) : Sport actif / Diète actif / aucun, d'après les abonnements en cours du client
- T10.4 Frontend : réorganiser la fiche client en exactement 3 onglets, avec le nouveau design system — Bilan (fusionne Profil + Mesures existants), Programme sportif (fusionne Programmes + Séances existants), Nutritionnel (reprend l'onglet Diète existant)
- T10.5 Frontend : état "non souscrit" avec invitation à vendre sur Programme sportif / Nutritionnel quand l'abonnement correspondant n'est pas actif (jamais masqué ni vide sans explication)
- T10.6 Bandeau de rappel sécurité médicale (non bloquant) sur l'onglet Bilan si suivi_medical_en_cours est coché, avant validation d'un objectif calorique ou d'un programme intensif
- T10.7 Carte "Abonnements à renouveler bientôt" sur le tableau de bord, barre de progression animée
- T10.8 Frontend : gestion du catalogue d'abonnements dans les paramètres coach (édition prix/durées)
+Tokens Tailwind (palette graphite/chalk + accent orange-fer, Oswald/Inter/IBM Plex Mono) et Framer Motion en place. Modèle `catalogue_abonnements`/`client_abonnements` + migration, catalogue par défaut à la création d'un coach (avec filet de rattrapage pour les comptes créés avant cette phase). API de vente/consultation/édition, logique d'accès aux modules en fonction pure testée. Fiche client réorganisée en 3 onglets (Bilan fusionne Profil+Mesures, Programme sportif fusionne Programmes+Séances, Nutritionnel reprend l'ancien onglet Diète), état "non souscrit" avec invitation à vendre, bandeau de rappel sécurité médicale, en-tête d'abonnements avec barre de progression animée, carte dashboard "abonnements à renouveler", page Paramètres pour éditer les prix du catalogue.
+
+Note de périmètre : l'édition du catalogue (T10.8) couvre le prix ; les durées restent la grille fixe 1/3/6 mois (pas de champ d'édition de durée, pour éviter des lignes de catalogue dégénérées). Testé de bout en bout via navigateur piloté contre Neon (vente, déblocage d'onglet, édition de prix) ; 55 tests backend + build/tests frontend passent.
+
 Phase 11 — Planning & réservation (V1.1)
  T11.1 Modèle creneaux_disponibles + reservations, migration
  T11.2 API : définir des créneaux disponibles (récurrents ou ponctuels)
@@ -55,4 +50,4 @@ Application mobile native, connexion biométrique, connexion santé/balance conn
 
 État global
 
-Mettre à jour cette ligne à chaque session de travail : Phase 9.5 terminée et testée contre Neon (2026-07-28), nettoyage pré-Phase 10 effectué (voir section ci-dessus). Dernière phase active : Phase 10 (design system + réorganisation 3 onglets + abonnements) — démarrage en cours.
+Mettre à jour cette ligne à chaque session de travail : Phase 10 terminée et testée contre Neon (2026-07-28). Dernière phase active : Phase 11 (Planning & réservation) — pas encore démarrée.
