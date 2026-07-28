@@ -5,27 +5,18 @@ Cocher [x] une tâche seulement une fois codée et testée contre la vraie base 
 Respecter l'ordre des phases.
 Committer, pousser et ouvrir une PR à la fin de chaque phase — ne pas enchaîner directement sur la phase suivante sans validation humaine.
 Mettre à jour la ligne "État global" en bas de ce fichier à chaque session.
-Phases 0 à 9 — ✅ Terminées, déployées en production
+Phases 0 à 9.5 — ✅ Terminées, déployées en production
 
-Authentification, gestion clients, création de programme (splits, cycles, GIF de démonstration via free-exercise-db), suivi des séances et progression, nutrition (calcul automatique Mifflin-St Jeor), mesures corporelles, tableau de bord, PWA + export de données, prospection (page publique + pipeline). Détail complet de l'implémentation : historique Git (PRs #1 à #9) et notes de chaque phase conservées dans les commits — non reproduites ici pour ne pas alourdir ce fichier.
+Authentification (Google OAuth2, migration depuis email/mot de passe), gestion clients, création de programme (splits, cycles, GIF de démonstration via free-exercise-db), suivi des séances et progression, nutrition (calcul automatique Mifflin-St Jeor), mesures corporelles, tableau de bord, PWA + export de données, prospection (page publique + pipeline). Détail complet de l'implémentation : historique Git (PRs #1 à #9, PR Phase 9.5) et notes de chaque phase conservées dans les commits — non reproduites ici pour ne pas alourdir ce fichier.
 
 Déployé sur : Netlify (frontend), Render (backend), Neon (base de données).
 
-Phase 9.5 — Authentification Google OAuth (avant la Phase 10)
+✅ Nettoyage préalable à la Phase 10 (effectué le 2026-07-28)
 
-Remplace l'authentification email/mot de passe + JWT. Voir cahier des charges section 7.
+Investigation menée avant de démarrer la Phase 10, deux constats distincts :
+- "Formules à l'heure" (ancien Epic 9 abandonné) : confirmé qu'aucun commit lié n'a jamais touché `main` — le seul commit concerné (`91098c6`) vivait sur `feature/phase-10`, écrasé par le pivot final dans cette même branche avant sa suppression ; il ne subsiste qu'à l'état d'objet Git non référencé (`git fsck --unreachable`), sans risque. Branche `feature/phase-10` déjà absente (locale et distante).
+- Anomalie distincte détectée en cours de route : la PR #9 (Phase 9 — Prospection) était restée ouverte et non mergée alors que sa migration (`slug` coach + modèle `Prospect`) avait été appliquée manuellement sur Neon en production, créant un écart entre `main` et la base réelle. Régularisé : PR #9 mergée dans `main`, puis fusionnée dans `feature/phase-9.5` — schéma local et Neon désormais identiques (`prisma migrate status` : up to date), 47 tests backend + build/tests frontend passent après fusion.
 
- T9.5.1 (manuel, coach) Créer un projet Google Cloud, configurer l'écran de consentement OAuth, générer Client ID + Client Secret
- T9.5.2 Backend : intégration OAuth2 Google (ex. passport-google-oauth20 ou équivalent), migration du modèle Coach (retirer l'obligation de mot_de_passe_hash, ajouter googleId, avatarUrl)
- T9.5.3 Frontend : bouton "Se connecter avec Google", suppression du formulaire email/mot de passe
- T9.5.4 Migration du compte coach existant : le relier à son compte Google sans perte de données (clients, programmes, historique conservés)
- T9.5.5 Testé de bout en bout (connexion réelle, déconnexion, reconnexion) contre la vraie base Neon
-⚠️ Nettoyage préalable à la Phase 10
-
-Un premier travail sur un modèle de "formules à l'heure" avait été commencé puis abandonné (changement de modèle économique vers des abonnements mensuels par module). Avant de démarrer la Phase 10 :
-
- T10.0a Vérifier qu'aucun commit lié aux "formules à l'heure" n'est mergé sur main
- T10.0b Supprimer toute branche feature/phase-10 résiduelle, repartir de main à jour
 Phase 10 — Design system + Réorganisation à 3 onglets + Abonnements par module
 
 Remplace définitivement l'ancien modèle et l'ancien style visuel en une seule fois — pas de refonte graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.1.
@@ -64,4 +55,4 @@ Application mobile native, connexion biométrique, connexion santé/balance conn
 
 État global
 
-Mettre à jour cette ligne à chaque session de travail : Dernière phase active : Phase 9.5 — pas encore démarrée. Commencer par T9.5.1 (création du projet Google Cloud, action manuelle du coach) avant de lancer Claude Code sur le reste. Phase 10 (nettoyage + design system + réorganisation) suit ensuite.
+Mettre à jour cette ligne à chaque session de travail : Phase 9.5 terminée et testée contre Neon (2026-07-28), nettoyage pré-Phase 10 effectué (voir section ci-dessus). Dernière phase active : Phase 10 (design system + réorganisation 3 onglets + abonnements) — démarrage en cours.
