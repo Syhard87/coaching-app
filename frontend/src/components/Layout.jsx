@@ -26,7 +26,12 @@ export function Layout() {
           </div>
           {coach && (
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span>{coach.nom}</span>
+              <span className="flex items-center gap-2">
+                {coach.avatarUrl && (
+                  <img src={coach.avatarUrl} alt="" className="h-6 w-6 rounded-full" referrerPolicy="no-referrer" />
+                )}
+                {coach.nom}
+              </span>
               <button
                 type="button"
                 onClick={logout}

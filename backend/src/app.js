@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes.js';
 import clientsRoutes from './routes/clients.routes.js';
 import programmesRoutes from './routes/programmes.routes.js';
@@ -18,6 +19,9 @@ const app = express();
 // En dev (variable absente), toutes les origines sont acceptées pour rester simple.
 app.use(cors({ origin: process.env.FRONTEND_URL || true }));
 app.use(express.json());
+// Cookie signé côté serveur uniquement pour vérifier le paramètre `state` du flux Google OAuth
+// (protection CSRF, voir routes/auth.routes.js) — jamais utilisé comme mécanisme de session.
+app.use(cookieParser());
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

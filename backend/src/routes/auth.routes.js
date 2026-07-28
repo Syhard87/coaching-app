@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
+import { construireUrlConsentement, echangerCodeContreProfil } from '../lib/googleAuth.js';
 
 const router = Router();
 
@@ -12,50 +13,70 @@ function signToken(coach) {
 }
 
 function toPublicCoach(coach) {
-  return { id: coach.id, nom: coach.nom, email: coach.email };
+  return { id: coach.id, nom: coach.nom, email: coach.email, avatarUrl: coach.avatarUrl };
 }
 
-router.post(
-  '/register',
+function googleRedirectUri() {
+  return process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback';
+}
+
+// Étape 1 — redirige vers l'écran de consentement Google. `state` protège contre le CSRF :
+// une valeur aléatoire signée dans un cookie, revérifiée au retour (T9.5.2).
+router.get('/google', (req, res) => {
+  const state = crypto.randomBytes(16).toString('hex');
+  res.cookie('google_oauth_state', state, { httpOnly: true, maxAge: 5 * 60 * 1000, sameSite: 'lax' });
+  const url = construireUrlConsentement({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    redirectUri: googleRedirectUri(),
+    state,
+  });
+  res.redirect(url);
+});
+
+// Étape 2 — Google redirige ici avec un code d'autorisation. On l'échange contre le profil
+// (email, nom, avatar), puis on relie/crée le coach et on émet notre propre JWT (inchangé pour
+// toutes les routes /api/* existantes, qui vérifient déjà ce token — voir middleware/auth.js).
+router.get(
+  '/google/callback',
   asyncHandler(async (req, res) => {
-    const { nom, email, password } = req.body;
+    const { code, state, error } = req.query;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-    if (!nom || !email || !password) {
-      return res.status(400).json({ error: 'nom, email et password sont requis' });
+    if (error || !code) {
+      return res.redirect(`${frontendUrl}/login?erreur=google_refuse`);
     }
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères' });
+    if (!state || state !== req.cookies?.google_oauth_state) {
+      return res.redirect(`${frontendUrl}/login?erreur=state_invalide`);
     }
+    res.clearCookie('google_oauth_state');
 
-    const existing = await prisma.coach.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(409).json({ error: 'Un compte existe déjà avec cet email' });
-    }
-
-    const motDePasseHash = await bcrypt.hash(password, 12);
-    const coach = await prisma.coach.create({
-      data: { nom, email, motDePasseHash },
+    const profil = await echangerCodeContreProfil({
+      code,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: googleRedirectUri(),
     });
 
-    res.status(201).json({ token: signToken(coach), coach: toPublicCoach(coach) });
-  })
-);
-
-router.post(
-  '/login',
-  asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'email et password sont requis' });
+    // Migration du compte existant (T9.5.4) : un coach déjà créé avec le même email (ex. via
+    // l'ancienne inscription email/mot de passe) est relié à son compte Google au lieu d'être
+    // dupliqué — ses clients, programmes et historique restent attachés au même coachId.
+    let coach = await prisma.coach.findUnique({ where: { googleId: profil.googleId } });
+    if (!coach) {
+      coach = await prisma.coach.findUnique({ where: { email: profil.email } });
+      if (coach) {
+        coach = await prisma.coach.update({
+          where: { id: coach.id },
+          data: { googleId: profil.googleId, avatarUrl: profil.avatarUrl },
+        });
+      } else {
+        coach = await prisma.coach.create({
+          data: { nom: profil.nom, email: profil.email, googleId: profil.googleId, avatarUrl: profil.avatarUrl },
+        });
+      }
     }
 
-    const coach = await prisma.coach.findUnique({ where: { email } });
-    if (!coach || !(await bcrypt.compare(password, coach.motDePasseHash))) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
-    }
-
-    res.json({ token: signToken(coach), coach: toPublicCoach(coach) });
+    const token = signToken(coach);
+    res.redirect(`${frontendUrl}/auth/callback#token=${token}`);
   })
 );
 
