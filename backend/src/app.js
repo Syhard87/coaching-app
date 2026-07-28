@@ -15,6 +15,7 @@ import exportRoutes from './routes/export.routes.js';
 import prospectsRoutes from './routes/prospects.routes.js';
 import publicRoutes from './routes/public.routes.js';
 import exercicesRoutes from './routes/exercices.routes.js';
+import abonnementsRoutes from './routes/abonnements.routes.js';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/prospects', prospectsRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/exercices', exercicesRoutes);
+app.use('/api/catalogue-abonnements', abonnementsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -89,7 +89,7 @@ export function ProgrammeCalendarPage() {
 
   return (
     <div className="max-w-4xl">
-      <Link to={`/clients/${clientId}/programmes`} className="text-sm text-gray-500 hover:underline">
+      <Link to={`/clients/${clientId}/programme`} className="text-sm text-gray-500 hover:underline">
         ← Programmes
       </Link>
       <h1 className="mb-6 mt-2 text-xl font-medium text-gray-900">

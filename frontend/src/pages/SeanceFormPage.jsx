@@ -107,7 +107,7 @@ export function SeanceFormPage() {
       } else {
         await clientsApi.createSeance(clientId, payload);
       }
-      navigate(`/clients/${clientId}/seances`);
+      navigate(`/clients/${clientId}/programme`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,7 +119,7 @@ export function SeanceFormPage() {
 
   return (
     <div className="max-w-2xl">
-      <Link to={`/clients/${clientId}/seances`} className="text-sm text-gray-500 hover:underline">
+      <Link to={`/clients/${clientId}/programme`} className="text-sm text-gray-500 hover:underline">
         ← Séances
       </Link>
       <h1 className="mb-6 mt-2 text-xl font-medium text-gray-900">
@@ -238,7 +238,7 @@ export function SeanceFormPage() {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/clients/${clientId}/seances`)}
+            onClick={() => navigate(`/clients/${clientId}/programme`)}
             className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Annuler

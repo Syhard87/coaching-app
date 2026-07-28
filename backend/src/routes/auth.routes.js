@@ -6,6 +6,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireAuth } from '../middleware/auth.js';
 import { construireUrlConsentement, echangerCodeContreProfil } from '../lib/googleAuth.js';
 import { slugify, estSlugValide } from '../lib/slug.js';
+import { CATALOGUE_DEFAUT } from '../lib/abonnements.js';
 
 const router = Router();
 
@@ -85,9 +86,27 @@ router.get(
       } else {
         const slug = await genererSlugDisponible(profil.nom);
         coach = await prisma.coach.create({
-          data: { nom: profil.nom, email: profil.email, googleId: profil.googleId, avatarUrl: profil.avatarUrl, slug },
+          data: {
+            nom: profil.nom,
+            email: profil.email,
+            googleId: profil.googleId,
+            avatarUrl: profil.avatarUrl,
+            slug,
+            // Catalogue d'abonnements par défaut à la création d'un compte coach — T10.1.
+            catalogueAbonnements: { create: CATALOGUE_DEFAUT },
+          },
         });
       }
+    }
+
+    // Filet de rattrapage : un compte créé avant l'introduction du catalogue d'abonnements
+    // (Phase 10) n'en a pas encore — on le seed au premier login qui en constate l'absence,
+    // qu'il vienne d'être lié ou qu'il soit déjà relié à Google depuis une session précédente.
+    const nbEntreesCatalogue = await prisma.catalogueAbonnement.count({ where: { coachId: coach.id } });
+    if (nbEntreesCatalogue === 0) {
+      await prisma.catalogueAbonnement.createMany({
+        data: CATALOGUE_DEFAUT.map((c) => ({ ...c, coachId: coach.id })),
+      });
     }
 
     const token = signToken(coach);

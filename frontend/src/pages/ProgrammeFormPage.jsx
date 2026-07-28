@@ -156,7 +156,7 @@ export function ProgrammeFormPage() {
       } else {
         await clientsApi.createProgramme(clientId, payload);
       }
-      navigate(`/clients/${clientId}/programmes`);
+      navigate(`/clients/${clientId}/programme`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -183,7 +183,7 @@ export function ProgrammeFormPage() {
 
   return (
     <div className="max-w-3xl">
-      <Link to={`/clients/${clientId}/programmes`} className="text-sm text-gray-500 hover:underline">
+      <Link to={`/clients/${clientId}/programme`} className="text-sm text-gray-500 hover:underline">
         ← Programmes
       </Link>
       <h1 className="mb-6 mt-2 text-xl font-medium text-gray-900">
@@ -384,7 +384,7 @@ export function ProgrammeFormPage() {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/clients/${clientId}/programmes`)}
+            onClick={() => navigate(`/clients/${clientId}/programme`)}
             className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             Annuler

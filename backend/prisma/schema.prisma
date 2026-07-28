@@ -99,6 +99,13 @@ enum StatutProspect {
   PERDU
 }
 
+// Abonnements par module — cahier des charges section 5 (Phase 10)
+enum ModuleAbonnement {
+  SPORT
+  DIETE
+  PACK_COMPLET
+}
+
 // --- Modèles ---------------------------------------------------------------
 
 model Coach {
@@ -117,11 +124,45 @@ model Coach {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  clients            Client[]
-  templatesProgramme TemplateProgramme[]
-  prospects          Prospect[]
+  clients              Client[]
+  templatesProgramme   TemplateProgramme[]
+  prospects            Prospect[]
+  catalogueAbonnements CatalogueAbonnement[]
 
   @@map("coaches")
+}
+
+// Catalogue éditable par le coach (module, durée, prix) — cahier des charges section 5.
+// Grille par défaut créée à l'inscription (T10.1) : Sport/Diète 50€/120€/180€, Pack Complet 85€/200€/300€.
+model CatalogueAbonnement {
+  id        String           @id @default(cuid())
+  coachId   String
+  coach     Coach            @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  module    ModuleAbonnement
+  dureeMois Int
+  prixTotal Float
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  clientAbonnements ClientAbonnement[]
+
+  @@map("catalogue_abonnements")
+}
+
+// Abonnement vendu à un client — dateFin calculée automatiquement à la vente
+// (dateDebut + dureeMois du catalogue). Un module est actif tant qu'un abonnement
+// non expiré le couvre (voir lib/accesModules.js — T10.3).
+model ClientAbonnement {
+  id                    String              @id @default(cuid())
+  clientId              String
+  client                Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  catalogueAbonnementId String
+  catalogueAbonnement   CatalogueAbonnement @relation(fields: [catalogueAbonnementId], references: [id])
+  dateDebut             DateTime            @default(now())
+  dateFin               DateTime
+  createdAt             DateTime            @default(now())
+
+  @@map("client_abonnements")
 }
 
 model Client {
@@ -156,6 +197,7 @@ model Client {
   journalDiete       JournalDiete[]
   mesures            Mesure[]
   prospectsConvertis Prospect[]
+  abonnements        ClientAbonnement[]
 
   @@map("clients")
 }
