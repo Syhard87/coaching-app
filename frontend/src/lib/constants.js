@@ -82,6 +82,12 @@ export const MODULES_ABONNEMENT = [
   { value: 'PACK_COMPLET', label: 'Pack Complet' },
 ];
 
+export const STATUTS_RESERVATION = [
+  { value: 'CONFIRMEE', label: 'Confirmée' },
+  { value: 'ANNULEE', label: 'Annulée' },
+  { value: 'HONOREE', label: 'Honorée' },
+];
+
 function label(options, value) {
   return options.find((o) => o.value === value)?.label || value;
 }
@@ -94,4 +100,5 @@ export const labelExperience = (v) => label(EXPERIENCES, v);
 export const labelTypeSplit = (v) => label(TYPES_SPLIT, v);
 export const labelStatutSemaine = (v) => label(STATUTS_SEMAINE, v);
 export const labelModuleAbonnement = (v) => label(MODULES_ABONNEMENT, v);
+export const labelStatutReservation = (v) => label(STATUTS_RESERVATION, v);
 export const labelStatutProspect = (v) => label(STATUTS_PROSPECT, v);

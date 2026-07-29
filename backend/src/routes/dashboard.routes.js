@@ -102,7 +102,26 @@ router.get(
       };
     });
 
-    res.json({ clientsActifs, seancesCetteSemaine, clientsARelancer, clientsDeloadTest, abonnementsARenouveler });
+    // Prochaines réservations — cahier des charges section 5 (T11.6).
+    const prochainesReservations = await prisma.reservation.findMany({
+      where: { client: { coachId: req.coachId, archive: false }, dateHeure: { gte: maintenant }, statut: 'CONFIRMEE' },
+      include: { client: { select: { id: true, nom: true } } },
+      orderBy: { dateHeure: 'asc' },
+      take: 5,
+    });
+
+    res.json({
+      clientsActifs,
+      seancesCetteSemaine,
+      clientsARelancer,
+      clientsDeloadTest,
+      abonnementsARenouveler,
+      prochainesReservations: prochainesReservations.map((r) => ({
+        clientId: r.client.id,
+        clientNom: r.client.nom,
+        dateHeure: r.dateHeure,
+      })),
+    });
   })
 );
 

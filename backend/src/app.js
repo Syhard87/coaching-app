@@ -16,6 +16,8 @@ import prospectsRoutes from './routes/prospects.routes.js';
 import publicRoutes from './routes/public.routes.js';
 import exercicesRoutes from './routes/exercices.routes.js';
 import abonnementsRoutes from './routes/abonnements.routes.js';
+import creneauxRoutes from './routes/creneaux.routes.js';
+import reservationsRoutes from './routes/reservations.routes.js';
 
 const app = express();
 
@@ -46,6 +48,8 @@ app.use('/api/prospects', prospectsRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/exercices', exercicesRoutes);
 app.use('/api/catalogue-abonnements', abonnementsRoutes);
+app.use('/api/creneaux', creneauxRoutes);
+app.use('/api/reservations', reservationsRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

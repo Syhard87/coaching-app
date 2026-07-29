@@ -102,6 +102,9 @@ export const clientsApi = {
   listJoursEntrainement: (id) => request('GET', `/clients/${id}/jours-entrainement`),
   listAbonnements: (id) => request('GET', `/clients/${id}/abonnements`),
   vendreAbonnement: (id, data) => request('POST', `/clients/${id}/abonnements`, data),
+  listReservations: (id, upcoming) =>
+    request('GET', `/clients/${id}/reservations${upcoming ? '?upcoming=true' : ''}`),
+  creerReservation: (id, data) => request('POST', `/clients/${id}/reservations`, data),
   getModulesActifs: (id) => request('GET', `/clients/${id}/modules-actifs`),
   listSeances: (id, params = {}) => {
     const qs = new URLSearchParams(
@@ -184,4 +187,15 @@ export const exercicesApi = {
 export const catalogueAbonnementsApi = {
   list: () => request('GET', '/catalogue-abonnements'),
   update: (id, data) => request('PATCH', `/catalogue-abonnements/${id}`, data),
+};
+
+export const creneauxApi = {
+  list: () => request('GET', '/creneaux'),
+  create: (data) => request('POST', '/creneaux', data),
+  remove: (id) => request('DELETE', `/creneaux/${id}`),
+};
+
+export const reservationsApi = {
+  list: (upcoming) => request('GET', `/reservations${upcoming ? '?upcoming=true' : ''}`),
+  setStatut: (id, statut) => request('PATCH', `/reservations/${id}`, { statut }),
 };

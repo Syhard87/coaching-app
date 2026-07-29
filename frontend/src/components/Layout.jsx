@@ -22,6 +22,9 @@ export function Layout() {
               <Link to="/prospects" className="hover:text-graphite-900 hover:underline">
                 Prospects
               </Link>
+              <Link to="/planning" className="hover:text-graphite-900 hover:underline">
+                Planning
+              </Link>
               <Link to="/export" className="hover:text-graphite-900 hover:underline">
                 Export
               </Link>

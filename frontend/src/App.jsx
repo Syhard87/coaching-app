@@ -16,6 +16,7 @@ import { ExportPage } from './pages/ExportPage';
 import { ProspectsPage } from './pages/ProspectsPage';
 import { PublicProspectPage } from './pages/PublicProspectPage';
 import { ParametresPage } from './pages/ParametresPage';
+import { PlanningPage } from './pages/PlanningPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/clients" element={<ClientsListPage />} />
               <Route path="/prospects" element={<ProspectsPage />} />
+              <Route path="/planning" element={<PlanningPage />} />
               <Route path="/clients/new" element={<ClientFormPage />} />
               <Route path="/clients/:id" element={<ClientFichePage onglet="bilan" />} />
               <Route path="/clients/:id/programme" element={<ClientFichePage onglet="programme" />} />

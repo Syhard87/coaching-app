@@ -106,6 +106,13 @@ enum ModuleAbonnement {
   PACK_COMPLET
 }
 
+// Planning & réservation — cahier des charges section 5 (Phase 11)
+enum StatutReservation {
+  CONFIRMEE
+  ANNULEE
+  HONOREE
+}
+
 // --- Modèles ---------------------------------------------------------------
 
 model Coach {
@@ -128,8 +135,47 @@ model Coach {
   templatesProgramme   TemplateProgramme[]
   prospects            Prospect[]
   catalogueAbonnements CatalogueAbonnement[]
+  creneauxDisponibles  CreneauDisponible[]
 
   @@map("coaches")
+}
+
+// Créneau déclaré disponible par le coach — récurrent (jour de semaine type) ou ponctuel
+// (date précise). heureDebut/heureFin au format "HH:mm" (comparaison lexicographique fiable
+// sur des chaînes zero-paddées, pas de fuseau à gérer). Cahier des charges section 5 (T11.1).
+model CreneauDisponible {
+  id          String       @id @default(cuid())
+  coachId     String
+  coach       Coach        @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  recurrent   Boolean      @default(true)
+  jourSemaine JourSemaine? // requis si récurrent
+  date        DateTime?    // requis si ponctuel (recurrent = false)
+  heureDebut  String
+  heureFin    String
+  createdAt   DateTime     @default(now())
+
+  reservations Reservation[]
+
+  @@map("creneaux_disponibles")
+}
+
+// Réservation d'un client sur un créneau — le coach réserve en son nom en attendant un
+// espace client (T11.3). dateHeure porte la date/heure concrète de cette occurrence
+// (un créneau récurrent peut être réservé sur plusieurs dates différentes).
+model Reservation {
+  id        String            @id @default(cuid())
+  clientId  String
+  client    Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  creneauId String?
+  // SetNull plutôt que Cascade : supprimer un créneau modèle ne doit pas effacer
+  // l'historique réel des réservations déjà prises dessus.
+  creneau   CreneauDisponible? @relation(fields: [creneauId], references: [id], onDelete: SetNull)
+
+  dateHeure DateTime
+  statut    StatutReservation @default(CONFIRMEE)
+  createdAt DateTime          @default(now())
+
+  @@map("reservations")
 }
 
 // Catalogue éditable par le coach (module, durée, prix) — cahier des charges section 5.
@@ -198,6 +244,7 @@ model Client {
   mesures            Mesure[]
   prospectsConvertis Prospect[]
   abonnements        ClientAbonnement[]
+  reservations       Reservation[]
 
   @@map("clients")
 }

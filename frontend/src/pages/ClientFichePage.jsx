@@ -12,6 +12,7 @@ import { MedicalBanner } from '../components/fiche/MedicalBanner';
 import { NonSouscrit } from '../components/fiche/NonSouscrit';
 import { MesuresSection } from '../components/fiche/MesuresSection';
 import { ProgrammesSection } from '../components/fiche/ProgrammesSection';
+import { ReservationsSection } from '../components/fiche/ReservationsSection';
 import { SeancesSection } from '../components/fiche/SeancesSection';
 import { NutritionSection } from '../components/fiche/NutritionSection';
 
@@ -79,6 +80,7 @@ export function ClientFichePage({ onglet }) {
         <ModuleTab actif={modulesActifs.sportActif} moduleLabel="Sport">
           <div className="space-y-10">
             <ProgrammesSection clientId={id} />
+            <ReservationsSection clientId={id} />
             <SeancesSection clientId={id} />
           </div>
         </ModuleTab>
