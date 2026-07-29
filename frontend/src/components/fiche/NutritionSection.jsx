@@ -63,14 +63,26 @@ export function NutritionSection({ clientId, client }) {
 
   return (
     <div className="space-y-10">
-      <ObjectifSection client={client} objectif={objectif} onSaved={load} />
+      <ObjectifSection client={client} objectif={objectif} mesures={mesures} onSaved={load} />
       <JournalSection clientId={clientId} objectif={objectif} journal={journal} onChange={load} />
-      <GraphiqueSection journal={journal} mesures={mesures} clientId={clientId} onMesureAdded={load} />
+      <GraphiqueSection journal={journal} mesures={mesures} />
     </div>
   );
 }
 
-function ObjectifSection({ client, objectif, onSaved }) {
+// Dernière mesure de poids réelle du client (source unique de vérité, cahier des charges
+// section 4.3) — null si aucune mesure n'a encore été enregistrée. Tri identique à celui du
+// backend (date puis createdAt) pour départager les mesures saisies le même jour calendaire.
+function derniereMesurePoids(mesures) {
+  return (
+    [...mesures]
+      .filter((m) => m.poids != null)
+      .sort((a, b) => new Date(b.date) - new Date(a.date) || new Date(b.createdAt) - new Date(a.createdAt))[0] ??
+    null
+  );
+}
+
+function ObjectifSection({ client, objectif, mesures, onSaved }) {
   const [methode, setMethode] = useState(objectif?.methodeCalcul || 'AUTO');
   const [typeObjectifCalorique, setTypeObjectifCalorique] = useState(objectif?.typeObjectifCalorique || '');
   const [manuel, setManuel] = useState({
@@ -82,7 +94,35 @@ function ObjectifSection({ client, objectif, onSaved }) {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const champsManquants = PROFIL_REQUIS_AUTO.filter((f) => !client[f]);
+  const derniereMesure = derniereMesurePoids(mesures);
+  // Le poids peut venir d'une mesure réelle même si poidsInitial n'a jamais été renseigné —
+  // ne pas bloquer le calcul automatique dans ce cas (cahier des charges section 4.3).
+  const poidsDisponible = client.poidsInitial != null || derniereMesure != null;
+  const champsManquants = PROFIL_REQUIS_AUTO.filter((f) =>
+    f === 'poidsInitial' ? !poidsDisponible : !client[f]
+  );
+  // Une mesure plus récente existe que celle utilisée pour le dernier calcul automatique —
+  // jamais de recalcul automatique/silencieux (cahier des charges section 8) : bouton explicite.
+  const recalculDisponible =
+    objectif?.methodeCalcul === 'AUTO' &&
+    derniereMesure &&
+    (!objectif.dateMesureUtilisee || new Date(derniereMesure.date) > new Date(objectif.dateMesureUtilisee));
+
+  async function recalculer() {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await clientsApi.setObjectifDiete(client.id, {
+        methodeCalcul: 'AUTO',
+        typeObjectifCalorique: objectif.typeObjectifCalorique,
+      });
+      onSaved();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -124,6 +164,36 @@ function ObjectifSection({ client, objectif, onSaved }) {
           <Stat label="Glucides" value={`${objectif.glucidesCible} g`} />
           <Stat label="Lipides" value={`${objectif.lipidesCible} g`} />
           {objectif.tdeeCalcule && <Stat label="TDEE calculé" value={`${objectif.tdeeCalcule} kcal`} />}
+        </div>
+      )}
+
+      {objectif?.methodeCalcul === 'AUTO' && (objectif.poidsUtilise != null || recalculDisponible) && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded border border-chalk-200 bg-chalk-50 p-3 text-sm">
+          <p className="text-graphite-600">
+            {objectif.poidsUtilise != null ? (
+              <>
+                Calculé à partir de :{' '}
+                <span className="font-mono font-medium text-graphite-900">{objectif.poidsUtilise} kg</span>
+                {objectif.dateMesureUtilisee ? (
+                  <>, mesuré le {new Date(objectif.dateMesureUtilisee).toLocaleDateString('fr-FR')}</>
+                ) : (
+                  <> (poids initial du profil — aucune mesure enregistrée pour ce client)</>
+                )}
+              </>
+            ) : (
+              'Calculé avec une ancienne version — source du poids inconnue.'
+            )}
+          </p>
+          {recalculDisponible && (
+            <button
+              type="button"
+              onClick={recalculer}
+              disabled={submitting}
+              className="ml-auto rounded bg-accent-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-700 disabled:opacity-50"
+            >
+              {submitting ? 'Recalcul…' : 'Recalculer avec les dernières données'}
+            </button>
+          )}
         </div>
       )}
 
@@ -319,12 +389,7 @@ function JournalSection({ clientId, objectif, journal, onChange }) {
   );
 }
 
-function GraphiqueSection({ journal, mesures, clientId, onMesureAdded }) {
-  const [date, setDate] = useState(todayISO());
-  const [poids, setPoids] = useState('');
-  const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-
+function GraphiqueSection({ journal, mesures }) {
   const data = useMemo(() => {
     const parJour = new Map();
     for (const e of journal) {
@@ -339,52 +404,13 @@ function GraphiqueSection({ journal, mesures, clientId, onMesureAdded }) {
     return Array.from(parJour.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [journal, mesures]);
 
-  async function handleAddPoids(e) {
-    e.preventDefault();
-    setError(null);
-    if (!poids) {
-      setError('Le poids est requis.');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await clientsApi.createMesure(clientId, { date, poids: Number(poids) });
-      setPoids('');
-      onMesureAdded();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
     <section>
       <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Poids & calories</h2>
-
-      <form
-        onSubmit={handleAddPoids}
-        className="mb-4 flex flex-wrap items-end gap-3 rounded border border-dashed border-chalk-300 p-4"
-      >
-        <div>
-          <label className="block text-xs text-graphite-600">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="mt-1 rounded border border-chalk-300 px-2 py-1.5 text-sm"
-          />
-        </div>
-        <NumberField label="Poids (kg)" value={poids} onChange={setPoids} step="0.1" compact />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded border border-chalk-300 px-4 py-2 text-sm text-graphite-700 hover:bg-chalk-100 disabled:opacity-50"
-        >
-          {submitting ? 'Ajout…' : '+ Ajouter une mesure de poids'}
-        </button>
-      </form>
+      <p className="mb-4 text-sm text-graphite-500">
+        La saisie d'une mesure de poids se fait depuis l'onglet Bilan — seule source de vérité pour le
+        calcul nutritionnel.
+      </p>
 
       {data.length === 0 ? (
         <p className="text-sm text-graphite-500">Pas encore de données à afficher.</p>

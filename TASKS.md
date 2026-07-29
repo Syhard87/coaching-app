@@ -1,52 +1,131 @@
-Suivi des tâches — Application de coaching sportif
-Instructions pour les agents Claude Code
-Se référer à docs/cahier-des-charges.md (version définitive) pour le détail fonctionnel de chaque tâche — c'est la référence unique du projet, elle intègre le tri explicite des fonctionnalités (section 10, Roadmap) pour éviter toute discussion répétée sur le périmètre.
-Cocher [x] une tâche seulement une fois codée et testée contre la vraie base Neon.
-Respecter l'ordre des phases.
-Committer, pousser et ouvrir une PR à la fin de chaque phase — ne pas enchaîner directement sur la phase suivante sans validation humaine.
-Mettre à jour la ligne "État global" en bas de ce fichier à chaque session.
-Phases 0 à 9.5 — ✅ Terminées, déployées en production
+# Suivi des tâches — Application de coaching sportif
 
-Authentification (Google OAuth2, migration depuis email/mot de passe), gestion clients, création de programme (splits, cycles, GIF de démonstration via free-exercise-db), suivi des séances et progression, nutrition (calcul automatique Mifflin-St Jeor), mesures corporelles, tableau de bord, PWA + export de données, prospection (page publique + pipeline). Détail complet de l'implémentation : historique Git (PRs #1 à #9, PR Phase 9.5) et notes de chaque phase conservées dans les commits — non reproduites ici pour ne pas alourdir ce fichier.
+## Instructions pour les agents Claude Code
+- Se référer à `docs/cahier-des-charges.md` (version définitive) pour le détail fonctionnel de chaque
+  tâche — c'est la référence unique du projet, elle intègre le tri explicite des fonctionnalités
+  (section 10, Roadmap) pour éviter toute discussion répétée sur le périmètre.
+- Cocher `[x]` une tâche seulement une fois codée **et** testée contre la vraie base Neon.
+- Respecter l'ordre des phases.
+- Committer, pousser et ouvrir une PR à la fin de chaque phase — ne pas enchaîner directement sur la
+  phase suivante sans validation humaine.
+- Mettre à jour la ligne "État global" en bas de ce fichier à chaque session.
 
-Déployé sur : Netlify (frontend), Render (backend), Neon (base de données).
+---
 
-✅ Nettoyage préalable à la Phase 10 (effectué le 2026-07-28)
+## Phases 0 à 9 — ✅ Terminées, déployées en production
+Authentification, gestion clients, création de programme (splits, cycles, GIF de démonstration via
+`free-exercise-db`), suivi des séances et progression, nutrition (calcul automatique Mifflin-St Jeor),
+mesures corporelles, tableau de bord, PWA + export de données, prospection (page publique + pipeline).
+Détail complet de l'implémentation : historique Git (PRs #1 à #9) et notes de chaque phase conservées dans
+les commits — non reproduites ici pour ne pas alourdir ce fichier.
 
-Investigation menée avant de démarrer la Phase 10, deux constats distincts :
-- "Formules à l'heure" (ancien Epic 9 abandonné) : confirmé qu'aucun commit lié n'a jamais touché `main` — le seul commit concerné (`91098c6`) vivait sur `feature/phase-10`, écrasé par le pivot final dans cette même branche avant sa suppression ; il ne subsiste qu'à l'état d'objet Git non référencé (`git fsck --unreachable`), sans risque. Branche `feature/phase-10` déjà absente (locale et distante).
-- Anomalie distincte détectée en cours de route : la PR #9 (Phase 9 — Prospection) était restée ouverte et non mergée alors que sa migration (`slug` coach + modèle `Prospect`) avait été appliquée manuellement sur Neon en production, créant un écart entre `main` et la base réelle. Régularisé : PR #9 mergée dans `main`, puis fusionnée dans `feature/phase-9.5` — schéma local et Neon désormais identiques (`prisma migrate status` : up to date), 47 tests backend + build/tests frontend passent après fusion.
+**Déployé sur** : Netlify (frontend), Render (backend), Neon (base de données).
 
-Phase 10 — ✅ Terminée (2026-07-28) — Design system + Réorganisation à 3 onglets + Abonnements par module
+## Phase 9.5 — ✅ Terminée — Authentification Google OAuth (mergée dans `main`)
+Remplace l'authentification email/mot de passe + JWT. Voir cahier des charges section 7.
 
-Remplace définitivement l'ancien modèle et l'ancien style visuel en une seule fois — pas de refonte graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.1.
+- [x] T9.5.1 *(manuel, coach)* Créer un projet Google Cloud, configurer l'écran de consentement OAuth,
+      générer Client ID + Client Secret
+- [x] T9.5.2 Backend : intégration OAuth2 Google (ex. `passport-google-oauth20` ou équivalent), migration
+      du modèle `Coach` (retirer l'obligation de `mot_de_passe_hash`, ajouter `googleId`, `avatarUrl`)
+- [x] T9.5.3 Frontend : bouton "Se connecter avec Google", suppression du formulaire email/mot de passe
+- [x] T9.5.4 Migration du compte coach existant : le relier à son compte Google sans perte de données
+      (clients, programmes, historique conservés)
+- [x] T9.5.5 Testé de bout en bout (connexion réelle, déconnexion, reconnexion) contre la vraie base Neon
 
-Tokens Tailwind (palette graphite/chalk + accent orange-fer, Oswald/Inter/IBM Plex Mono) et Framer Motion en place. Modèle `catalogue_abonnements`/`client_abonnements` + migration, catalogue par défaut à la création d'un coach (avec filet de rattrapage pour les comptes créés avant cette phase). API de vente/consultation/édition, logique d'accès aux modules en fonction pure testée. Fiche client réorganisée en 3 onglets (Bilan fusionne Profil+Mesures, Programme sportif fusionne Programmes+Séances, Nutritionnel reprend l'ancien onglet Diète), état "non souscrit" avec invitation à vendre, bandeau de rappel sécurité médicale, en-tête d'abonnements avec barre de progression animée, carte dashboard "abonnements à renouveler", page Paramètres pour éditer les prix du catalogue.
+## ⚠️ Nettoyage préalable à la Phase 10 — ✅ effectué
+Un premier travail sur un modèle de "formules à l'heure" avait été commencé puis abandonné (changement de
+modèle économique vers des abonnements mensuels par module). Avant de démarrer la Phase 10 :
+- [x] T10.0a Vérifier qu'aucun commit lié aux "formules à l'heure" n'est mergé sur `main` — confirmé,
+      seul commit concerné vivait sur une branche `feature/phase-10` supprimée, non référencé
+- [x] T10.0b Supprimer toute branche `feature/phase-10` résiduelle, repartir de `main` à jour — déjà absente
 
-Note de périmètre : l'édition du catalogue (T10.8) couvre le prix ; les durées restent la grille fixe 1/3/6 mois (pas de champ d'édition de durée, pour éviter des lignes de catalogue dégénérées). Testé de bout en bout via navigateur piloté contre Neon (vente, déblocage d'onglet, édition de prix) ; 55 tests backend + build/tests frontend passent.
+## Phase 10 — ✅ Terminée — Design system + Réorganisation à 3 onglets + Abonnements par module (mergée dans `main`)
+Remplace définitivement l'ancien modèle et l'ancien style visuel en une seule fois — pas de refonte
+graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.1.
 
-Phase 11 — ✅ Terminée (2026-07-28) — Planning & réservation (V1.1)
+- [x] T10.0c Mettre en place les tokens Tailwind (couleurs, polices Oswald/Inter/IBM Plex Mono) et
+      installer Framer Motion — base appliquée à tous les écrans reconstruits dans cette phase
+- [x] T10.1 Modèle `catalogue_abonnements` + `client_abonnements`, migration, catalogue par défaut à la
+      création d'un compte coach (grille : Sport/Diète 50€ 1 mois, 120€ 3 mois, 180€ 6 mois ; Pack Complet
+      85€/200€/300€)
+- [x] T10.2 API : vendre un abonnement à un client, consulter l'état des modules actifs, calcul automatique
+      de la date de fin
+- [x] T10.3 Logique d'accès aux modules (fonction pure, testée) : Sport actif / Diète actif / aucun,
+      d'après les abonnements en cours du client
+- [x] T10.4 Frontend : réorganiser la fiche client en exactement 3 onglets, avec le nouveau design system —
+      **Bilan** (fusionne Profil + Mesures existants), **Programme sportif** (fusionne Programmes + Séances
+      existants), **Nutritionnel** (reprend l'onglet Diète existant)
+- [x] T10.5 Frontend : état "non souscrit" avec invitation à vendre sur Programme sportif / Nutritionnel
+      quand l'abonnement correspondant n'est pas actif (jamais masqué ni vide sans explication)
+- [x] T10.6 Bandeau de rappel sécurité médicale (non bloquant) sur l'onglet Bilan si `suivi_medical_en_cours`
+      est coché, avant validation d'un objectif calorique ou d'un programme intensif
+- [x] T10.7 Carte "Abonnements à renouveler bientôt" sur le tableau de bord, barre de progression animée
+- [x] T10.8 Frontend : gestion du catalogue d'abonnements dans les paramètres coach (édition prix/durées) —
+      couvre le prix ; les durées restent la grille fixe 1/3/6 mois
 
-Modèle `CreneauDisponible` (récurrent ou ponctuel, heureDebut/heureFin en "HH:mm" validées par une fonction pure testée) + `Reservation` (statut confirmée/annulée/honorée), migration appliquée sur Neon. API créneaux (CRUD coach-scopé) et réservations (création avec détection de conflit d'horaire, changement de statut, vue d'ensemble coach). Page Planning (créneaux + réservations, avec Framer Motion pour les transitions de liste et de statut). Onglet Programme sportif de la fiche client : section "Séances à venir" distincte de l'historique des séances. Carte "Prochaines réservations" sur le tableau de bord.
+## Phase 11 — ✅ Codée et testée contre Neon — Planning & réservation (V1.1) (PR #12 ouverte, non mergée)
+- [x] T11.1 Modèle `creneaux_disponibles` + `reservations`, migration
+- [x] T11.2 API : définir des créneaux disponibles (récurrents ou ponctuels)
+- [x] T11.3 API : réserver un créneau pour un client (le coach réserve en son nom en attendant un espace
+      client), changement de statut (confirmée/annulée/honorée)
+- [x] T11.4 Frontend : page "Planning" coach (définir ses créneaux, vue des réservations)
+- [x] T11.5 Frontend : séances à venir affichées dans l'onglet Programme sportif, distinctes de l'historique
+- [x] T11.6 Carte "Prochaines réservations" sur le tableau de bord
 
-Testé de bout en bout via navigateur piloté contre Neon : création d'un créneau récurrent, réservation d'un client dessus, affichage dans l'onglet Programme sportif et sur le tableau de bord, annulation. 60 tests backend + build/tests/lint frontend passent. Données de test nettoyées après vérification.
+## Phase 11.5 — ✅ Terminée — Correctif : lien Bilan ↔ Nutritionnel
+Bug identifié en usage réel avec un vrai client. Voir cahier des charges section 4.3. Prioritaire, avant
+la Phase 12 — corrige un comportement déjà en production, pas une nouvelle fonctionnalité.
 
-Phase 12 — Photos de progression (V1.1)
- T12.1 Modèle photos_progression, migration, stockage avec protection renforcée (voir cahier des charges section 8 — traitement équivalent aux données de santé)
- T12.2 API upload/liste/suppression, scoping strict par coach, jamais d'URL publique prévisible
- T12.3 Frontend : ajout de photo datée depuis l'onglet Bilan, frise chronologique de comparaison
-Phase 13 — Objectifs client structurés (V1.1)
- T13.1 Modèle objectifs_client (description, valeur cible, unité, échéance, statut), migration
- T13.2 API CRUD objectifs
- T13.3 Frontend : affichage sur l'onglet Bilan avec indicateur de progression vers l'échéance
-Phase 14+ — V2 (ne pas commencer avant validation complète de la V1.1)
+- [x] T11.5.1 Investiguer : confirmé — `PUT /:id/objectif-diete` lisait `client.poidsInitial` figé, jamais
+      la table `mesures`
+- [x] T11.5.2 Backend : le calcul utilise désormais la mesure de poids la plus récente du client (tri par
+      date puis `createdAt`), avec repli sur `poids_initial` uniquement si aucune mesure n'existe encore
+- [x] T11.5.3 Frontend : formulaire de saisie de poids dupliqué retiré de l'onglet Nutritionnel — un seul
+      point de saisie (onglet Bilan)
+- [x] T11.5.4 Frontend : affiche sur quelles données repose le calcul actuel (poids + date de la mesure)
+- [x] T11.5.5 Frontend : bouton "Recalculer avec les dernières données" si une mesure plus récente existe
+      que celle utilisée pour le dernier calcul — jamais de recalcul automatique/silencieux
+- [x] T11.5.6 Testé de bout en bout contre Neon avec le client réel concerné : nouvelle mesure de poids,
+      bouton de recalcul apparu, nouveaux objectifs corrects après clic
 
-Voir cahier des charges section 10 : paiement en ligne (Stripe), repas types réutilisables, automatisations de relance, statistiques coach enrichies, suivi d'habitudes simples, espace client complet.
+## Phase 11.6 — Correctif technique mineur : date du jour par défaut (todayISO)
+Repéré pendant l'audit de la Phase 11.5, hors périmètre de ce correctif — à traiter séparément, sans
+urgence. Le motif partagé `new Date().toISOString().slice(0,10)` calcule la date en UTC plutôt qu'en heure
+locale : sur une fenêtre d'1-2h autour de minuit (heure du navigateur), un champ "date du jour" pré-rempli
+peut afficher le mauvais jour. Cosmétique (l'utilisateur peut corriger à la main), présent depuis
+plusieurs phases (Mesures, Séances, Abonnements, Planning) — pas une régression de la Phase 11.
 
-Hors périmètre (voir cahier des charges section 10 pour la justification)
+- [ ] T11.6.1 Centraliser le calcul de "date du jour" en heure locale dans une seule fonction utilitaire
+      partagée, utilisée partout où `todayISO()` ou équivalent est dupliqué
+- [ ] T11.6.2 Vérifier chaque écran concerné (Mesures, Séances, Abonnements, Planning) après correction
 
-Application mobile native, connexion biométrique, connexion santé/balance connectée, accès salle sécurisé, mode kiosk, SEO/site vitrine/newsletter, Drive, Vidéothèque VOD, gestion multi-coach, module de comptabilité/facturation.
+## Phase 12 — Photos de progression (V1.1)
+- [ ] T12.1 Modèle `photos_progression`, migration, stockage avec protection renforcée (voir cahier des
+      charges section 8 — traitement équivalent aux données de santé)
+- [ ] T12.2 API upload/liste/suppression, scoping strict par coach, jamais d'URL publique prévisible
+- [ ] T12.3 Frontend : ajout de photo datée depuis l'onglet Bilan, frise chronologique de comparaison
 
-État global
+## Phase 13 — Objectifs client structurés (V1.1)
+- [ ] T13.1 Modèle `objectifs_client` (description, valeur cible, unité, échéance, statut), migration
+- [ ] T13.2 API CRUD objectifs
+- [ ] T13.3 Frontend : affichage sur l'onglet Bilan avec indicateur de progression vers l'échéance
 
-Mettre à jour cette ligne à chaque session de travail : Phase 11 terminée et testée contre Neon (2026-07-28), committée localement sur feature/phase-11 (non poussée, pas de PR — en attente de validation humaine). Dernière phase active : Phase 12 (Photos de progression) — pas encore démarrée.
+## Phase 14+ — V2 (ne pas commencer avant validation complète de la V1.1)
+Voir cahier des charges section 10 : paiement en ligne (Stripe), repas types réutilisables,
+automatisations de relance, statistiques coach enrichies, suivi d'habitudes simples, espace client complet.
+
+## Hors périmètre (voir cahier des charges section 10 pour la justification)
+Application mobile native, connexion biométrique, connexion santé/balance connectée, accès salle sécurisé,
+mode kiosk, SEO/site vitrine/newsletter, Drive, Vidéothèque VOD, gestion multi-coach, module de
+comptabilité/facturation.
+
+---
+
+## État global
+_Mettre à jour cette ligne à chaque session de travail :_
+**Dernière phase active :** Phase 11.5 terminée et testée contre Neon (2026-07-29), committée localement sur
+`feature/phase-11-5` (inclut aussi la Phase 11, mergée dedans le temps que la PR #12 soit revue, pour que
+l'historique de migrations locale corresponde à ce qui tourne réellement sur Neon). Phases 9.5 et 10 déjà
+mergées dans `main`. Phase 11.6 (correctif `todayISO()`) tracée séparément, pas encore démarrée. Prochaine
+étape après validation des PR en cours : Phase 12 (Photos de progression).

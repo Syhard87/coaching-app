@@ -390,6 +390,13 @@ model ObjectifDiete {
   glucidesCible         Int
   lipidesCible          Int
 
+  // Traçabilité du calcul automatique (T11.5.2/T11.5.4/T11.5.5) : le poids et la date de la
+  // mesure réellement utilisés — la dernière entrée de `mesures`, jamais poidsInitial une fois
+  // qu'au moins une mesure existe. Null en mode manuel, ou si aucune mesure n'existe encore
+  // (repli sur poidsInitial : dateMesureUtilisee reste null dans ce cas précis).
+  poidsUtilise      Float?
+  dateMesureUtilisee DateTime?
+
   updatedAt DateTime @updatedAt
 
   @@map("objectifs_diete")
@@ -425,6 +432,11 @@ model Mesure {
   poitrine Float?
   cuisse   Float?
   notes    String?
+
+  // Départage les mesures saisies le même jour calendaire (date seule, sans heure) — sert de
+  // tri secondaire fiable pour déterminer "la dernière mesure" (T11.5.2), plutôt que de se fier
+  // à l'ordre des identifiants.
+  createdAt DateTime @default(now())
 
   @@map("mesures")
 }

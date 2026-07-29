@@ -325,7 +325,18 @@ router.put(
         return res.status(400).json({ error: 'typeObjectifCalorique est requis en mode automatique' });
       }
       const { sexe, poidsInitial, tailleCm, age } = client;
-      if (!sexe || !poidsInitial || !tailleCm || !age || !client.niveauActivite) {
+
+      // Source unique de vérité pour le poids (cahier des charges section 4.3, T11.5.2) : la
+      // dernière mesure réelle du client, jamais relue sur poidsInitial une fois qu'au moins une
+      // mesure existe. poidsInitial ne sert que de repli avant toute première mesure.
+      const derniereMesure = await prisma.mesure.findFirst({
+        where: { clientId: client.id, poids: { not: null } },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      });
+      const poidsUtilise = derniereMesure?.poids ?? poidsInitial;
+      const dateMesureUtilisee = derniereMesure?.date ?? null;
+
+      if (!sexe || !poidsUtilise || !tailleCm || !age || !client.niveauActivite) {
         return res.status(400).json({
           error:
             'Le profil client doit renseigner sexe, âge, taille, poids et niveau d\'activité pour le calcul automatique',
@@ -334,14 +345,14 @@ router.put(
 
       const calc = calculerObjectifsAuto({
         sexe,
-        poidsKg: poidsInitial,
+        poidsKg: poidsUtilise,
         tailleCm,
         age,
         niveauActivite: client.niveauActivite,
         typeObjectifCalorique,
       });
 
-      data = { methodeCalcul, typeObjectifCalorique, ...calc };
+      data = { methodeCalcul, typeObjectifCalorique, ...calc, poidsUtilise, dateMesureUtilisee };
     } else {
       const { caloriesCible, proteinesCible, glucidesCible, lipidesCible } = req.body;
       if (!caloriesCible || !proteinesCible || !glucidesCible || !lipidesCible) {
@@ -357,6 +368,8 @@ router.put(
         proteinesCible,
         glucidesCible,
         lipidesCible,
+        poidsUtilise: null,
+        dateMesureUtilisee: null,
       };
     }
 
@@ -416,7 +429,7 @@ router.get(
 
     const mesures = await prisma.mesure.findMany({
       where: { clientId: client.id },
-      orderBy: { date: 'desc' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     });
     res.json(mesures);
   })
