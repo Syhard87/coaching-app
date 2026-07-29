@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { clientsApi, journalDieteApi } from '../../lib/api';
 import { TYPES_OBJECTIF_CALORIQUE } from '../../lib/constants';
 
@@ -80,6 +71,24 @@ function derniereMesurePoids(mesures) {
       .sort((a, b) => new Date(b.date) - new Date(a.date) || new Date(b.createdAt) - new Date(a.createdAt))[0] ??
     null
   );
+}
+
+// Variation de poids sur les 30 derniers jours — compare le poids actuel à la mesure la plus
+// récente antérieure au seuil des 30 jours (approximation de "il y a 30 jours" quand aucune
+// mesure ne tombe exactement sur cette date). Null si moins de deux mesures couvrent la période.
+function variationPoids30j(mesures, maintenant = new Date()) {
+  const actuelle = derniereMesurePoids(mesures);
+  if (!actuelle) return null;
+
+  const seuil = maintenant.getTime() - 30 * 86_400_000;
+  const avantSeuil = [...mesures]
+    .filter((m) => m.poids != null && new Date(m.date).getTime() <= seuil)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+  if (!avantSeuil || avantSeuil.id === actuelle.id) {
+    return { poidsActuel: actuelle.poids, delta: null };
+  }
+  return { poidsActuel: actuelle.poids, delta: Math.round((actuelle.poids - avantSeuil.poids) * 10) / 10 };
 }
 
 function ObjectifSection({ client, objectif, mesures, onSaved }) {
@@ -390,50 +399,52 @@ function JournalSection({ clientId, objectif, journal, onChange }) {
 }
 
 function GraphiqueSection({ journal, mesures }) {
-  const data = useMemo(() => {
-    const parJour = new Map();
-    for (const e of journal) {
-      const key = e.date.slice(0, 10);
-      parJour.set(key, { ...parJour.get(key), date: key, calories: e.calories ?? undefined });
-    }
-    for (const m of mesures) {
-      if (m.poids == null) continue;
-      const key = m.date.slice(0, 10);
-      parJour.set(key, { ...parJour.get(key), date: key, poids: m.poids });
-    }
-    return Array.from(parJour.values()).sort((a, b) => a.date.localeCompare(b.date));
-  }, [journal, mesures]);
+  const data = useMemo(
+    () =>
+      journal
+        .filter((e) => e.calories != null)
+        .map((e) => ({ date: e.date.slice(0, 10), calories: e.calories }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    [journal]
+  );
+
+  const variation = useMemo(() => variationPoids30j(mesures), [mesures]);
 
   return (
     <section>
-      <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Poids & calories</h2>
-      <p className="mb-4 text-sm text-graphite-500">
-        La saisie d'une mesure de poids se fait depuis l'onglet Bilan — seule source de vérité pour le
-        calcul nutritionnel.
+      <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Calories</h2>
+
+      {/* Contexte poids en une phrase compacte — le graphique de poids vit uniquement dans
+          l'onglet Bilan (T11.5.7), pas de second graphique dupliqué ici. */}
+      <p className="mb-4 text-sm text-graphite-600">
+        {variation == null ? (
+          "Aucune mesure de poids enregistrée pour ce client."
+        ) : (
+          <>
+            Poids actuel : <span className="font-mono font-medium text-graphite-900">{variation.poidsActuel} kg</span>
+            {variation.delta != null && (
+              <>
+                {' '}
+                ({variation.delta > 0 ? '+' : ''}
+                {variation.delta} kg sur 30 jours)
+              </>
+            )}
+          </>
+        )}
       </p>
 
       {data.length === 0 ? (
         <p className="text-sm text-graphite-500">Pas encore de données à afficher.</p>
       ) : (
-        <div className="h-80 rounded border border-chalk-200 bg-white p-4">
+        <div className="h-64 rounded border border-chalk-200 bg-white p-4">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data}>
+            <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="poids" tick={{ fontSize: 12 }} domain={['auto', 'auto']} />
-              <YAxis yAxisId="calories" orientation="right" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} domain={['auto', 'auto']} />
               <Tooltip />
-              <Legend />
-              <Line yAxisId="poids" type="monotone" dataKey="poids" name="Poids (kg)" stroke="#1c1f24" connectNulls />
-              <Line
-                yAxisId="calories"
-                type="monotone"
-                dataKey="calories"
-                name="Calories (kcal)"
-                stroke="#9aa0a9"
-                connectNulls
-              />
-            </ComposedChart>
+              <Line type="monotone" dataKey="calories" name="Calories (kcal)" stroke="#9aa0a9" connectNulls />
+            </LineChart>
           </ResponsiveContainer>
         </div>
       )}

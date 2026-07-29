@@ -66,7 +66,12 @@ Calcul automatique à partir du Bilan — bases scientifiques établies :
   (+500), ou maintien
 - Macros calculés : protéines 1,6-2,2 g/kg, lipides 0,8-1 g/kg, glucides le reste
 - Plan hebdomadaire = cibles chiffrées jour par jour (V1 : pas de génération de menus concrets)
-- Journal alimentaire (entrées quotidiennes, moyennes glissantes 7/30j, graphique combiné poids/calories)
+- Journal alimentaire (entrées quotidiennes, moyennes glissantes 7/30j)
+- **Un seul graphique de poids dans toute l'application** : il vit dans l'onglet Bilan (transversal,
+  visible même sans abonnement Diète actif). L'onglet Nutritionnel affiche uniquement le **graphique des
+  calories**, accompagné d'une phrase de contexte compacte lisant les mêmes données de mesures que Bilan
+  (ex. "Poids actuel : 65 kg, variation de −2 kg sur 30 jours") — jamais un second graphique qui retrace
+  la même courbe de poids que Bilan.
 - **Repas types réutilisables** (V2, voir 11) : le coach enregistre des repas personnalisés que le client
   peut réutiliser rapidement dans son journal, sans aller jusqu'à un générateur de menus complet
 
@@ -151,7 +156,10 @@ mais chaleureux côté client.
 - **Photos de progression : niveau de protection renforcé.** Une photo du corps d'un client est une donnée
   au moins aussi sensible qu'une note de santé — accès strictement limité au coach concerné, jamais
   exposée par une URL publique ou prévisible, suppression possible par le client si un espace lui est
-  ouvert.
+  ouvert. **Stockage** : conservées en binaire directement dans la base Neon — jamais sur le disque du
+  backend Render, dont le système de fichiers est éphémère (perte de toute donnée locale à chaque
+  redéploiement ou mise en veille). À revoir vers un service de stockage dédié (ex. Cloudflare R2, gratuit
+  jusqu'à 10 Go) si le volume de photos approche le quota gratuit de 0,5 Go de Neon.
 - Algorithmes assistifs, jamais prescriptifs — toute valeur calculée reste modifiable.
 - Rappel de sécurité médicale non bloquant si "suivi médical en cours" est coché.
 - Aucune illustration d'exercice générée par IA.
