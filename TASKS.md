@@ -21,7 +21,7 @@ les commits — non reproduites ici pour ne pas alourdir ce fichier.
 
 **Déployé sur** : Netlify (frontend), Render (backend), Neon (base de données).
 
-## Phase 9.5 — Authentification Google OAuth (avant la Phase 10)
+## Phase 9.5 — ✅ Terminée — Authentification Google OAuth (mergée dans `main`)
 Remplace l'authentification email/mot de passe + JWT. Voir cahier des charges section 7.
 
 - [x] T9.5.1 *(manuel, coach)* Créer un projet Google Cloud, configurer l'écran de consentement OAuth,
@@ -33,14 +33,14 @@ Remplace l'authentification email/mot de passe + JWT. Voir cahier des charges se
       (clients, programmes, historique conservés)
 - [x] T9.5.5 Testé de bout en bout (connexion réelle, déconnexion, reconnexion) contre la vraie base Neon
 
-## ⚠️ Nettoyage préalable à la Phase 10 — ✅ effectué (2026-07-28)
+## ⚠️ Nettoyage préalable à la Phase 10 — ✅ effectué
 Un premier travail sur un modèle de "formules à l'heure" avait été commencé puis abandonné (changement de
 modèle économique vers des abonnements mensuels par module). Avant de démarrer la Phase 10 :
-- [x] T10.0a Vérifier qu'aucun commit lié aux "formules à l'heure" n'est mergé sur `main` — confirmé : le
-      seul commit concerné vivait sur `feature/phase-10` (supprimée), écrasé avant suppression, non référencé
+- [x] T10.0a Vérifier qu'aucun commit lié aux "formules à l'heure" n'est mergé sur `main` — confirmé,
+      seul commit concerné vivait sur une branche `feature/phase-10` supprimée, non référencé
 - [x] T10.0b Supprimer toute branche `feature/phase-10` résiduelle, repartir de `main` à jour — déjà absente
 
-## Phase 10 — Design system + Réorganisation à 3 onglets + Abonnements par module
+## Phase 10 — ✅ Terminée — Design system + Réorganisation à 3 onglets + Abonnements par module (mergée dans `main`)
 Remplace définitivement l'ancien modèle et l'ancien style visuel en une seule fois — pas de refonte
 graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.1.
 
@@ -62,9 +62,9 @@ graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.
       est coché, avant validation d'un objectif calorique ou d'un programme intensif
 - [x] T10.7 Carte "Abonnements à renouveler bientôt" sur le tableau de bord, barre de progression animée
 - [x] T10.8 Frontend : gestion du catalogue d'abonnements dans les paramètres coach (édition prix/durées) —
-      couvre l'édition du prix ; les durées restent la grille fixe 1/3/6 mois
+      couvre le prix ; les durées restent la grille fixe 1/3/6 mois
 
-## Phase 11 — Planning & réservation (V1.1) — codée et testée contre Neon, PR #12 ouverte (non mergée)
+## Phase 11 — ✅ Codée et testée contre Neon — Planning & réservation (V1.1) (PR #12 ouverte, non mergée)
 - [x] T11.1 Modèle `creneaux_disponibles` + `reservations`, migration
 - [x] T11.2 API : définir des créneaux disponibles (récurrents ou ponctuels)
 - [x] T11.3 API : réserver un créneau pour un client (le coach réserve en son nom en attendant un espace
@@ -73,24 +73,32 @@ graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.
 - [x] T11.5 Frontend : séances à venir affichées dans l'onglet Programme sportif, distinctes de l'historique
 - [x] T11.6 Carte "Prochaines réservations" sur le tableau de bord
 
-## Phase 11.5 — ✅ Terminée (2026-07-29) — Correctif : lien Bilan ↔ Nutritionnel
-Bug identifié en usage réel avec un vrai client. Voir cahier des charges section 4.3. Corrige un
-comportement déjà en production, pas une nouvelle fonctionnalité.
+## Phase 11.5 — ✅ Terminée — Correctif : lien Bilan ↔ Nutritionnel
+Bug identifié en usage réel avec un vrai client. Voir cahier des charges section 4.3. Prioritaire, avant
+la Phase 12 — corrige un comportement déjà en production, pas une nouvelle fonctionnalité.
 
-- [x] T11.5.1 Investiguer : confirmé — `PUT /:id/objectif-diete` lisait `client.poidsInitial` figé
-      (`backend/src/routes/clients.routes.js`), jamais la table `mesures`
-- [x] T11.5.2 Backend : le calcul lit désormais la dernière mesure de poids du client (tri par date puis
-      `createdAt`, champ ajouté à `Mesure` pour départager les mesures d'un même jour calendaire), repli
-      sur `poidsInitial` seulement si aucune mesure n'existe. `ObjectifDiete` trace `poidsUtilise` /
-      `dateMesureUtilisee` (migration appliquée sur Neon)
+- [x] T11.5.1 Investiguer : confirmé — `PUT /:id/objectif-diete` lisait `client.poidsInitial` figé, jamais
+      la table `mesures`
+- [x] T11.5.2 Backend : le calcul utilise désormais la mesure de poids la plus récente du client (tri par
+      date puis `createdAt`), avec repli sur `poids_initial` uniquement si aucune mesure n'existe encore
 - [x] T11.5.3 Frontend : formulaire de saisie de poids dupliqué retiré de l'onglet Nutritionnel — un seul
       point de saisie (onglet Bilan)
-- [x] T11.5.4 Frontend : affiche "Calculé à partir de : X kg, mesuré le DD/MM" (ou la mention du repli sur
-      le poids initial si aucune mesure n'existe encore)
-- [x] T11.5.5 Frontend : bouton "Recalculer avec les dernières données", visible aussi pour un objectif
-      calculé avant ce correctif (poidsUtilise historique inconnu) — jamais de recalcul silencieux
-- [x] T11.5.6 Testé de bout en bout contre Neon avec le vrai client concerné : ajout d'une mesure plus
-      récente, bouton de recalcul apparu, nouveaux objectifs corrects après clic ; données de test nettoyées
+- [x] T11.5.4 Frontend : affiche sur quelles données repose le calcul actuel (poids + date de la mesure)
+- [x] T11.5.5 Frontend : bouton "Recalculer avec les dernières données" si une mesure plus récente existe
+      que celle utilisée pour le dernier calcul — jamais de recalcul automatique/silencieux
+- [x] T11.5.6 Testé de bout en bout contre Neon avec le client réel concerné : nouvelle mesure de poids,
+      bouton de recalcul apparu, nouveaux objectifs corrects après clic
+
+## Phase 11.6 — Correctif technique mineur : date du jour par défaut (todayISO)
+Repéré pendant l'audit de la Phase 11.5, hors périmètre de ce correctif — à traiter séparément, sans
+urgence. Le motif partagé `new Date().toISOString().slice(0,10)` calcule la date en UTC plutôt qu'en heure
+locale : sur une fenêtre d'1-2h autour de minuit (heure du navigateur), un champ "date du jour" pré-rempli
+peut afficher le mauvais jour. Cosmétique (l'utilisateur peut corriger à la main), présent depuis
+plusieurs phases (Mesures, Séances, Abonnements, Planning) — pas une régression de la Phase 11.
+
+- [ ] T11.6.1 Centraliser le calcul de "date du jour" en heure locale dans une seule fonction utilitaire
+      partagée, utilisée partout où `todayISO()` ou équivalent est dupliqué
+- [ ] T11.6.2 Vérifier chaque écran concerné (Mesures, Séances, Abonnements, Planning) après correction
 
 ## Phase 12 — Photos de progression (V1.1)
 - [ ] T12.1 Modèle `photos_progression`, migration, stockage avec protection renforcée (voir cahier des
@@ -117,7 +125,7 @@ comptabilité/facturation.
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
 **Dernière phase active :** Phase 11.5 terminée et testée contre Neon (2026-07-29), committée localement sur
-`feature/phase-11-5` (non poussée, pas de PR — en attente de confirmation). Cette branche inclut aussi la
-Phase 11 (mergée dedans le temps que la PR #12 soit revue, pour que l'historique de migrations locale
-corresponde à ce qui tourne réellement sur Neon). Phases 9.5, 10 mergées dans `main`. Prochaine étape :
-Phase 12 (Photos de progression) — pas encore démarrée.
+`feature/phase-11-5` (inclut aussi la Phase 11, mergée dedans le temps que la PR #12 soit revue, pour que
+l'historique de migrations locale corresponde à ce qui tourne réellement sur Neon). Phases 9.5 et 10 déjà
+mergées dans `main`. Phase 11.6 (correctif `todayISO()`) tracée séparément, pas encore démarrée. Prochaine
+étape après validation des PR en cours : Phase 12 (Photos de progression).
