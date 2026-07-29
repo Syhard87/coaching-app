@@ -66,6 +66,26 @@ export function DashboardPage() {
       </section>
 
       <section>
+        <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Prochaines réservations</h2>
+        {data.prochainesReservations.length === 0 ? (
+          <p className="text-sm text-graphite-500">Aucune réservation à venir.</p>
+        ) : (
+          <ul className="divide-y divide-chalk-200 rounded border border-chalk-200 bg-white text-sm">
+            {data.prochainesReservations.map((r, i) => (
+              <li key={i} className="flex items-center justify-between px-4 py-2">
+                <Link to={`/clients/${r.clientId}/programme`} className="text-graphite-900 hover:underline">
+                  {r.clientNom}
+                </Link>
+                <span className="font-mono text-steel-600">
+                  {new Date(r.dateHeure).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
         <h2 className="mb-3 font-heading text-lg font-medium text-graphite-900">Clients à relancer</h2>
         {data.clientsARelancer.length === 0 ? (
           <p className="text-sm text-graphite-500">Tous les clients ont une mesure récente.</p>

@@ -637,4 +637,54 @@ router.get(
   })
 );
 
+// Réservations — cahier des charges section 5 (T11.3). Le coach réserve un créneau pour
+// le client en attendant l'ouverture d'un espace client autonome.
+router.get(
+  '/:id/reservations',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { upcoming } = req.query;
+    const reservations = await prisma.reservation.findMany({
+      where: {
+        clientId: client.id,
+        ...(upcoming === 'true' ? { dateHeure: { gte: new Date() }, statut: 'CONFIRMEE' } : {}),
+      },
+      orderBy: { dateHeure: upcoming === 'true' ? 'asc' : 'desc' },
+    });
+    res.json(reservations);
+  })
+);
+
+router.post(
+  '/:id/reservations',
+  asyncHandler(async (req, res) => {
+    const client = await prisma.client.findFirst({ where: { id: req.params.id, coachId: req.coachId } });
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+
+    const { creneauId, dateHeure } = req.body;
+    if (!dateHeure) return res.status(400).json({ error: 'dateHeure est requise' });
+
+    if (creneauId) {
+      const creneau = await prisma.creneauDisponible.findFirst({
+        where: { id: creneauId, coachId: req.coachId },
+      });
+      if (!creneau) return res.status(404).json({ error: 'Créneau introuvable' });
+    }
+
+    // Un seul client à la fois sur un même horaire — cohérent avec le fonctionnement d'un
+    // coach solo en visio (pas de créneaux de groupe en V1.1).
+    const conflit = await prisma.reservation.findFirst({
+      where: { client: { coachId: req.coachId }, dateHeure: new Date(dateHeure), statut: 'CONFIRMEE' },
+    });
+    if (conflit) return res.status(409).json({ error: 'Ce créneau est déjà réservé' });
+
+    const reservation = await prisma.reservation.create({
+      data: { clientId: client.id, creneauId: creneauId || null, dateHeure: new Date(dateHeure) },
+    });
+    res.status(201).json(reservation);
+  })
+);
+
 export default router;
