@@ -64,7 +64,7 @@ graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.
 - [x] T10.8 Frontend : gestion du catalogue d'abonnements dans les paramètres coach (édition prix/durées) —
       couvre le prix ; les durées restent la grille fixe 1/3/6 mois
 
-## Phase 11 — ✅ Codée et testée contre Neon — Planning & réservation (V1.1) (PR #12 ouverte, non mergée)
+## Phase 11 — ✅ Terminée — Planning & réservation (V1.1) (mergée dans `main`)
 - [x] T11.1 Modèle `creneaux_disponibles` + `reservations`, migration
 - [x] T11.2 API : définir des créneaux disponibles (récurrents ou ponctuels)
 - [x] T11.3 API : réserver un créneau pour un client (le coach réserve en son nom en attendant un espace
@@ -73,7 +73,7 @@ graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.
 - [x] T11.5 Frontend : séances à venir affichées dans l'onglet Programme sportif, distinctes de l'historique
 - [x] T11.6 Carte "Prochaines réservations" sur le tableau de bord
 
-## Phase 11.5 — ✅ Terminée — Correctif : lien Bilan ↔ Nutritionnel
+## Phase 11.5 — ✅ Terminée — Correctif : lien Bilan ↔ Nutritionnel (mergée dans `main`)
 Bug identifié en usage réel avec un vrai client. Voir cahier des charges section 4.3. Prioritaire, avant
 la Phase 12 — corrige un comportement déjà en production, pas une nouvelle fonctionnalité.
 
@@ -88,6 +88,11 @@ la Phase 12 — corrige un comportement déjà en production, pas une nouvelle f
       que celle utilisée pour le dernier calcul — jamais de recalcul automatique/silencieux
 - [x] T11.5.6 Testé de bout en bout contre Neon avec le client réel concerné : nouvelle mesure de poids,
       bouton de recalcul apparu, nouveaux objectifs corrects après clic
+- [x] T11.5.7 Graphique de poids retiré de l'onglet Nutritionnel — ne garde que le graphique des calories,
+      avec une phrase de contexte compacte ("Poids actuel : X kg (± Y kg sur 30 jours)"), lue depuis les
+      mêmes mesures que Bilan. Le seul graphique de poids de l'application reste celui de Bilan. Testé
+      contre Neon avec le client réel (Andrei) : graphique et formulaire de poids bien absents de
+      Nutritionnel, phrase de contexte correcte, graphique de poids toujours présent et inchangé sur Bilan.
 
 ## Phase 11.6 — Correctif technique mineur : date du jour par défaut (todayISO)
 Repéré pendant l'audit de la Phase 11.5, hors périmètre de ce correctif — à traiter séparément, sans
@@ -124,8 +129,7 @@ comptabilité/facturation.
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 11.5 terminée et testée contre Neon (2026-07-29), committée localement sur
-`feature/phase-11-5` (inclut aussi la Phase 11, mergée dedans le temps que la PR #12 soit revue, pour que
-l'historique de migrations locale corresponde à ce qui tourne réellement sur Neon). Phases 9.5 et 10 déjà
-mergées dans `main`. Phase 11.6 (correctif `todayISO()`) tracée séparément, pas encore démarrée. Prochaine
-étape après validation des PR en cours : Phase 12 (Photos de progression).
+**Dernière phase active :** Phase 11.5 terminée (y compris T11.5.7) et testée contre Neon (2026-07-29),
+mergée dans `main`. Phases 9.5, 10 et 11 également mergées. Phase 11.6 (correctif `todayISO()`) tracée
+séparément, pas encore démarrée. Prochaine étape : Phase 12 (Photos de progression) — en attente de
+confirmation avant de démarrer.
