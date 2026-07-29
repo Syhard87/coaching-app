@@ -49,6 +49,17 @@ sinon état "non souscrit" avec invitation à vendre — jamais masqué ni vide 
   l'historique des séances passées
 
 ### 4.3 Onglet Nutritionnel
+**Lien avec le Bilan (source unique de vérité)** : le poids utilisé pour le calcul BMR/TDEE est **la
+mesure de poids la plus récente** enregistrée dans l'onglet Bilan — jamais un poids figé saisi une seule
+fois. Il n'existe **qu'un seul endroit** pour saisir une mesure de poids dans toute l'application (onglet
+Bilan) ; aucun formulaire de saisie de poids dupliqué ailleurs, y compris sur cette page.
+
+L'onglet Nutritionnel affiche toujours, de façon visible, **sur quelles données repose le calcul actuel**
+(ex. "Calculé à partir de : 61 kg, mesuré le 27/07"). Si une mesure plus récente existe depuis le dernier
+calcul, un bouton **"Recalculer avec les dernières données"** apparaît — jamais de recalcul automatique et
+silencieux, conformément au principe déjà posé (section 8) : l'algorithme propose, il ne décide jamais à
+la place du coach.
+
 Calcul automatique à partir du Bilan — bases scientifiques établies :
 - BMR (Mifflin-St Jeor) → TDEE selon niveau d'activité
 - Choix du coach : déficit léger (−250 kcal/j) ou modéré (−500 kcal/j), surplus léger (+250) ou modéré
