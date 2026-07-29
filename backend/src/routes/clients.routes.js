@@ -331,7 +331,7 @@ router.put(
       // mesure existe. poidsInitial ne sert que de repli avant toute première mesure.
       const derniereMesure = await prisma.mesure.findFirst({
         where: { clientId: client.id, poids: { not: null } },
-        orderBy: { date: 'desc' },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       });
       const poidsUtilise = derniereMesure?.poids ?? poidsInitial;
       const dateMesureUtilisee = derniereMesure?.date ?? null;
@@ -429,7 +429,7 @@ router.get(
 
     const mesures = await prisma.mesure.findMany({
       where: { clientId: client.id },
-      orderBy: { date: 'desc' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     });
     res.json(mesures);
   })

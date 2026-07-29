@@ -433,6 +433,11 @@ model Mesure {
   cuisse   Float?
   notes    String?
 
+  // Départage les mesures saisies le même jour calendaire (date seule, sans heure) — sert de
+  // tri secondaire fiable pour déterminer "la dernière mesure" (T11.5.2), plutôt que de se fier
+  // à l'ordre des identifiants.
+  createdAt DateTime @default(now())
+
   @@map("mesures")
 }
 

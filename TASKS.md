@@ -73,21 +73,24 @@ graphique séparée après coup. Voir cahier des charges sections 3, 4, 5, 6, 7.
 - [x] T11.5 Frontend : séances à venir affichées dans l'onglet Programme sportif, distinctes de l'historique
 - [x] T11.6 Carte "Prochaines réservations" sur le tableau de bord
 
-## Phase 11.5 — Correctif : lien Bilan ↔ Nutritionnel
-Bug identifié en usage réel avec un vrai client. Voir cahier des charges section 4.3. Prioritaire, avant
-la Phase 12 — corrige un comportement déjà en production, pas une nouvelle fonctionnalité.
+## Phase 11.5 — ✅ Terminée (2026-07-29) — Correctif : lien Bilan ↔ Nutritionnel
+Bug identifié en usage réel avec un vrai client. Voir cahier des charges section 4.3. Corrige un
+comportement déjà en production, pas une nouvelle fonctionnalité.
 
-- [ ] T11.5.1 Investiguer : confirmer que le calcul BMR/TDEE utilise actuellement `client.poids_initial`
-      (figé) plutôt que la dernière entrée de `mesures`
-- [ ] T11.5.2 Backend : faire utiliser la mesure de poids la plus récente du client comme source pour le
-      calcul, avec repli sur `poids_initial` uniquement si aucune mesure n'existe encore
-- [ ] T11.5.3 Frontend : supprimer le formulaire de saisie de poids dupliqué en bas de l'onglet
-      Nutritionnel ("Poids & calories") — la saisie ne se fait plus que depuis l'onglet Bilan
-- [ ] T11.5.4 Frontend : afficher sur quelles données repose le calcul actuel (poids + date de la mesure)
-- [ ] T11.5.5 Frontend : bouton "Recalculer avec les dernières données" si une mesure plus récente existe
-      que celle utilisée pour le dernier calcul — jamais de recalcul automatique/silencieux
-- [ ] T11.5.6 Testé de bout en bout : ajouter une nouvelle mesure de poids, vérifier que le bouton de
-      recalcul apparaît, vérifier que les nouveaux objectifs sont corrects après clic
+- [x] T11.5.1 Investiguer : confirmé — `PUT /:id/objectif-diete` lisait `client.poidsInitial` figé
+      (`backend/src/routes/clients.routes.js`), jamais la table `mesures`
+- [x] T11.5.2 Backend : le calcul lit désormais la dernière mesure de poids du client (tri par date puis
+      `createdAt`, champ ajouté à `Mesure` pour départager les mesures d'un même jour calendaire), repli
+      sur `poidsInitial` seulement si aucune mesure n'existe. `ObjectifDiete` trace `poidsUtilise` /
+      `dateMesureUtilisee` (migration appliquée sur Neon)
+- [x] T11.5.3 Frontend : formulaire de saisie de poids dupliqué retiré de l'onglet Nutritionnel — un seul
+      point de saisie (onglet Bilan)
+- [x] T11.5.4 Frontend : affiche "Calculé à partir de : X kg, mesuré le DD/MM" (ou la mention du repli sur
+      le poids initial si aucune mesure n'existe encore)
+- [x] T11.5.5 Frontend : bouton "Recalculer avec les dernières données", visible aussi pour un objectif
+      calculé avant ce correctif (poidsUtilise historique inconnu) — jamais de recalcul silencieux
+- [x] T11.5.6 Testé de bout en bout contre Neon avec le vrai client concerné : ajout d'une mesure plus
+      récente, bouton de recalcul apparu, nouveaux objectifs corrects après clic ; données de test nettoyées
 
 ## Phase 12 — Photos de progression (V1.1)
 - [ ] T12.1 Modèle `photos_progression`, migration, stockage avec protection renforcée (voir cahier des
@@ -113,6 +116,8 @@ comptabilité/facturation.
 
 ## État global
 _Mettre à jour cette ligne à chaque session de travail :_
-**Dernière phase active :** Phase 11.5 (correctif lien Bilan ↔ Nutritionnel) — investigation en cours.
-Phases 9.5, 10 mergées dans `main`. Phase 11 (Planning & réservation) codée et testée contre Neon, PR #12
-ouverte, en attente de revue humaine avant merge.
+**Dernière phase active :** Phase 11.5 terminée et testée contre Neon (2026-07-29), committée localement sur
+`feature/phase-11-5` (non poussée, pas de PR — en attente de confirmation). Cette branche inclut aussi la
+Phase 11 (mergée dedans le temps que la PR #12 soit revue, pour que l'historique de migrations locale
+corresponde à ce qui tourne réellement sur Neon). Phases 9.5, 10 mergées dans `main`. Prochaine étape :
+Phase 12 (Photos de progression) — pas encore démarrée.
